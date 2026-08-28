@@ -150,6 +150,27 @@ case "reindex":
     }
     semaphore.wait()
 
+case "tapcheck":
+    // Exercises the system-audio tap for a few seconds and reports what the
+    // IOProc actually delivered. Play some audio while it runs.
+    let seconds = arguments.count >= 3 ? (Double(arguments[2]) ?? 4) : 4
+    let recorder = SystemAudioTapRecorder()
+    let out = FileManager.default.temporaryDirectory
+        .appendingPathComponent("ouvi-tapcheck-\(UUID().uuidString).wav")
+    do {
+        try recorder.start(writingTo: out)
+        eprint("tap started; capturing \(Int(seconds))s — play some audio now…")
+        Thread.sleep(forTimeInterval: seconds)
+        recorder.stop()
+        let size = (try? FileManager.default.attributesOfItem(atPath: out.path)[.size] as? Int) ?? 0
+        print("tapcheck: \(recorder.diagnostics) fileBytes=\(size ?? 0)")
+        try? FileManager.default.removeItem(at: out)
+        exit(recorder.observedSignal ? 0 : 2)
+    } catch {
+        eprint("tapcheck failed to start: \(error)")
+        exit(1)
+    }
+
 case "doctor":
     // Same self-check as `ouvi-mcp --doctor`.
     let process = Process()

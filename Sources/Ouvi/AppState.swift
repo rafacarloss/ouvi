@@ -131,6 +131,14 @@ final class AppState: ObservableObject {
         do {
             let streams = try session.stop()
             pendingStreams = streams
+            if !session.systemSignalObserved {
+                lastError = """
+                O áudio do sistema veio vazio — só o seu microfone foi gravado. \
+                Verifique Ajustes do Sistema → Privacidade e Segurança → Gravação \
+                de Áudio do Sistema e autorize o Ouvi, depois grave de novo. \
+                (Detalhes técnicos: \(session.systemDiagnostics))
+                """
+            }
             refreshSessions()
             processingStage = .transcribingMic
             let processor = MeetingProcessor(database: database)

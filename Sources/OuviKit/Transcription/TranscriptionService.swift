@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import FluidAudio
 import OSLog
@@ -47,7 +48,16 @@ public actor TranscriptionService {
 
     /// Transcribes one audio file (any format/sample rate; FluidAudio resamples,
     /// and long files stream from disk with constant memory).
+    /// Files shorter than ~0.4s (e.g. an empty channel) return an empty
+    /// transcript instead of failing the whole pipeline.
     public func transcribe(url: URL, languageHint: String?) async throws -> ChannelTranscript {
+        if let audioFile = try? AVAudioFile(forReading: url) {
+            let seconds = Double(audioFile.length) / audioFile.processingFormat.sampleRate
+            if seconds < 0.4 {
+                log.info("skipping \(url.lastPathComponent): only \(String(format: "%.2f", seconds))s of audio")
+                return ChannelTranscript(text: "", words: [], utterances: [])
+            }
+        }
         let manager = try await manager()
         let language = languageHint.flatMap { Language(rawValue: $0) }
         var state = try TdtDecoderState()

@@ -24,6 +24,18 @@ public final class SystemAudioTapRecorder {
     /// Most recent RMS level in 0...1, for UI metering.
     public private(set) var currentLevel: Float = 0
 
+    // Diagnostics (read after stop): what actually happened inside the IOProc.
+    public private(set) var callbackCount = 0
+    public private(set) var conversionFailures = 0
+    public private(set) var writeErrors = 0
+    public private(set) var framesWritten: Int64 = 0
+
+    public private(set) var peakAmplitude: Float = 0
+
+    public var diagnostics: String {
+        "callbacks=\(callbackCount) frames=\(framesWritten) convFail=\(conversionFailures) writeErr=\(writeErrors) peak=\(peakAmplitude) signal=\(observedSignal)"
+    }
+
     public private(set) var outputURL: URL?
 
     /// Called on the audio thread with each captured buffer — used to feed the
@@ -93,7 +105,13 @@ public final class SystemAudioTapRecorder {
         }
         aggregateID = newAggregateID
 
-        let file = try AVAudioFile(forWriting: url, settings: format.settings)
+        // The file's processing format must match the tap's buffer layout
+        // (interleaved float), or every write(from:) throws a format mismatch.
+        let file = try AVAudioFile(
+            forWriting: url,
+            settings: format.settings,
+            commonFormat: format.commonFormat,
+            interleaved: format.isInterleaved)
         self.file = file
         outputURL = url
 
@@ -119,36 +137,83 @@ public final class SystemAudioTapRecorder {
 
     private func render(bufferList: UnsafePointer<AudioBufferList>, time: UnsafePointer<AudioTimeStamp>) {
         guard let file, let tapFormat else { return }
+        callbackCount += 1
         if firstBufferHostTime == nil, time.pointee.mFlags.contains(.hostTimeValid) {
             firstBufferHostTime = time.pointee.mHostTime
         }
         let ablPointer = UnsafeMutablePointer(mutating: bufferList)
-        guard let frames = ablPointer.pointee.mBuffers.mDataByteSize as UInt32?,
-              frames > 0,
-              let pcm = AVAudioPCMBuffer(pcmFormat: tapFormat, bufferListNoCopy: ablPointer)
-        else { return }
+        guard ablPointer.pointee.mBuffers.mDataByteSize > 0 else { return }
+        guard let pcm = makePCMBuffer(from: ablPointer, format: tapFormat) else {
+            conversionFailures += 1
+            if conversionFailures == 1 {
+                log.error("tap ABL→PCM conversion failed (buffers=\(ablPointer.pointee.mNumberBuffers), bytes=\(ablPointer.pointee.mBuffers.mDataByteSize))")
+            }
+            return
+        }
 
-        // Level + silent-denial detection on channel 0.
-        if let data = pcm.floatChannelData?[0] {
-            let n = Int(pcm.frameLength)
+        // Level + silent-denial detection. floatChannelData is nil for
+        // interleaved buffers, so read the raw buffer and stride by channel.
+        let frames = Int(pcm.frameLength)
+        if frames > 0, let raw = pcm.audioBufferList.pointee.mBuffers.mData {
+            let stride = tapFormat.isInterleaved ? Int(tapFormat.channelCount) : 1
+            let data = raw.assumingMemoryBound(to: Float.self)
             var sum: Float = 0
+            var count = 0
             var i = 0
-            while i < n {
+            while i < frames * stride {
                 let v = data[i]
                 sum += v * v
-                i += 64
+                count += 1
+                if abs(v) > peakAmplitude { peakAmplitude = abs(v) }
+                i += 64 * stride
             }
-            let rms = n > 0 ? (sum / Float(max(1, n / 64))).squareRoot() : 0
+            let rms = count > 0 ? (sum / Float(count)).squareRoot() : 0
             currentLevel = rms
             if rms > 0.0002 { observedSignal = true }
         }
 
         do {
             try file.write(from: pcm)
+            framesWritten += Int64(pcm.frameLength)
         } catch {
-            log.error("tap write failed: \(error.localizedDescription)")
+            writeErrors += 1
+            if writeErrors == 1 {
+                log.error("tap write failed: \(error.localizedDescription)")
+            }
         }
         onBuffer?(pcm)
+    }
+
+    /// Wraps the IOProc's AudioBufferList as an AVAudioPCMBuffer. Tries the
+    /// zero-copy wrapper first; falls back to a manual copy when the ABL
+    /// layout doesn't match the format's expectation (interleaved vs not).
+    private func makePCMBuffer(
+        from abl: UnsafeMutablePointer<AudioBufferList>,
+        format: AVAudioFormat
+    ) -> AVAudioPCMBuffer? {
+        if let pcm = AVAudioPCMBuffer(pcmFormat: format, bufferListNoCopy: abl) {
+            return pcm
+        }
+        // Manual path: compute frames from byte size and copy channel data.
+        let buffers = UnsafeMutableAudioBufferListPointer(abl)
+        guard let first = buffers.first, let firstData = first.mData else { return nil }
+        let bytesPerFrame = Int(format.streamDescription.pointee.mBytesPerFrame)
+        guard bytesPerFrame > 0 else { return nil }
+        let frames = AVAudioFrameCount(Int(first.mDataByteSize) / bytesPerFrame)
+        guard frames > 0, let pcm = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else {
+            return nil
+        }
+        pcm.frameLength = frames
+        if format.isInterleaved {
+            memcpy(pcm.audioBufferList.pointee.mBuffers.mData, firstData, Int(first.mDataByteSize))
+        } else if let channelData = pcm.floatChannelData {
+            for (index, buffer) in buffers.enumerated() where index < Int(format.channelCount) {
+                if let data = buffer.mData {
+                    memcpy(channelData[index], data, Int(buffer.mDataByteSize))
+                }
+            }
+        }
+        return pcm
     }
 
     public func stop() {

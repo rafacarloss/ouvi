@@ -36,6 +36,7 @@ public final class RecordingSession {
     }
     /// False after a while indicates a silently denied system-audio permission.
     public var systemSignalObserved: Bool { systemTap.observedSignal }
+    public var systemDiagnostics: String { systemTap.diagnostics }
 
     public init(database: OuviDatabase, title: String, kind: Session.Kind = .meeting, calendarEventID: String? = nil) {
         self.database = database
