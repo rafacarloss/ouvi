@@ -10,7 +10,8 @@ struct MainWindow: View {
     var body: some View {
         NavigationSplitView {
             sidebar
-                .navigationSplitViewColumnWidth(min: 240, ideal: 290)
+                .background(DS.bgSidebar)
+                .navigationSplitViewColumnWidth(min: DS.sidebarWidth, ideal: DS.sidebarWidth)
         } detail: {
             if let id = state.selectedSessionID {
                 SessionDetailView(sessionID: id)
@@ -116,15 +117,17 @@ struct TodayMeetingsHeader: View {
         if calendar.accessGranted && !calendar.todaysMeetings.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Text("HOJE")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .font(DS.mono(10, .bold))
+                    .tracking(1.0)
+                    .foregroundStyle(DS.textFaint)
                 ForEach(calendar.todaysMeetings) { meeting in
                     HStack(spacing: 6) {
                         Text(meeting.start.formatted(date: .omitted, time: .shortened))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
+                            .font(DS.monoXS)
+                            .foregroundStyle(DS.textFaint)
                         Text(meeting.title)
-                            .font(.caption)
+                            .font(DS.caption)
+                            .foregroundStyle(DS.textBody)
                             .lineLimit(1)
                         Spacer()
                         if meeting.isNow && !state.isRecording {
@@ -149,32 +152,57 @@ struct SessionRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            HStack {
+            HStack(spacing: 6) {
                 Text(session.title)
-                    .font(.body.weight(.medium))
+                    .font(DS.bodyMedium)
+                    .foregroundStyle(DS.textBody)
                     .lineLimit(1)
                 Spacer()
                 stateBadge
             }
-            Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Text(Self.relativeDate(session.startedAt))
+                    .font(DS.monoXS)
+                    .foregroundStyle(DS.textFaint)
+                if let ended = session.endedAt {
+                    Text("·").foregroundStyle(DS.textFaint)
+                    Text("\(max(1, Int(ended.timeIntervalSince(session.startedAt) / 60))) min")
+                        .font(DS.monoXS)
+                        .foregroundStyle(DS.textFaint)
+                }
+            }
         }
-        .padding(.vertical, 3)
+        .padding(.vertical, 5)
+    }
+
+    static func relativeDate(_ date: Date) -> String {
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if Calendar.current.isDateInToday(date) { return "hoje \(time)" }
+        if Calendar.current.isDateInYesterday(date) { return "ontem \(time)" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.dateFormat = "d MMM"
+        return "\(formatter.string(from: date)) \(time)"
     }
 
     @ViewBuilder
     private var stateBadge: some View {
         switch session.state {
         case .recording:
-            Image(systemName: "record.circle").foregroundStyle(.red)
+            Circle().fill(DS.live).frame(width: 7, height: 7)
         case .transcribing:
             ProgressView().controlSize(.mini)
         case .failed:
-            Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 10))
+                .foregroundStyle(DS.caution)
         case .ready:
             if session.usedCloud {
-                Image(systemName: "cloud").font(.caption2).foregroundStyle(.secondary)
+                MicroBadge(text: "NUVEM", color: DS.caution, background: DS.cautionSoft)
+                    .help("Nuvem usada nesta reunião — apenas o texto do transcript foi enviado.")
+            } else {
+                MicroBadge(text: "LOCAL")
+                    .help("Tudo neste Mac")
             }
         }
     }
@@ -188,22 +216,42 @@ struct RecordButton: View {
             Button {
                 state.stopRecording()
             } label: {
-                Label(elapsed, systemImage: "stop.circle.fill")
-                    .foregroundStyle(.red)
+                HStack(spacing: 7) {
+                    Circle().fill(DS.textOnAccent).frame(width: 7, height: 7)
+                    Text("AO VIVO · \(elapsed)")
+                        .font(DS.mono(11, .bold))
+                        .tracking(0.5)
+                }
+                .foregroundStyle(DS.textOnAccent)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(DS.accent, in: Capsule())
+                .shadow(color: DS.liveGlow, radius: 8)
             }
+            .buttonStyle(.plain)
             .help("Parar e transcrever")
         } else if let stage = state.processingStage {
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
-                Text(stageLabel(stage)).font(.caption)
+                Text(stageLabel(stage)).font(DS.caption).foregroundStyle(DS.textMuted)
             }
         } else {
             Button {
                 state.startRecording()
             } label: {
-                Label("Gravar", systemImage: "record.circle")
+                HStack(spacing: 6) {
+                    Image(systemName: "circle.fill")
+                        .font(.system(size: 8))
+                    Text("Gravar")
+                        .font(DS.bodyMedium)
+                }
+                .foregroundStyle(DS.textOnAccent)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(DS.accent, in: Capsule())
             }
-            .help("Gravar reunião (mic + áudio do sistema, tudo local)")
+            .buttonStyle(.plain)
+            .help("Gravar reunião — mic + áudio do sistema, tudo neste Mac")
         }
     }
 
@@ -228,17 +276,26 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Image(systemName: "waveform.and.mic")
-                .font(.system(size: 44))
-                .foregroundStyle(.secondary)
-            Text("Suas reuniões, no seu Mac.")
-                .font(.title3.weight(.semibold))
-            Text("Clique em Gravar durante uma call — sem bot, sem nuvem.\nSegure Fn para ditar em qualquer app.")
+            HStack(spacing: 5) {
+                Text("ouvi")
+                    .font(DS.sans(34, .black))
+                    .tracking(-1.0)
+                    .foregroundStyle(DS.textTitle)
+                Circle().fill(DS.accent).frame(width: 8, height: 8)
+                    .offset(y: 8)
+            }
+            Text("Nada ainda. Grave uma reunião ou solte um arquivo de áudio aqui.")
+                .font(DS.body)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DS.textMuted)
             Button("Gravar agora") { state.startRecording() }
                 .keyboardShortcut("r", modifiers: [.command])
+            Text("Segure fn para ditar em qualquer app")
+                .font(DS.monoXS)
+                .foregroundStyle(DS.textFaint)
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(DS.bgWindow)
     }
 }

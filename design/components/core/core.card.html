@@ -1,0 +1,85 @@
+<!-- @dsCard group="Components" viewport="700x300" name="Core — buttons, badges, tags, keycaps" subtitle="One primary green action per view; badges are mono uppercase" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .grp { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: var(--space-4); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-faint); letter-spacing: var(--tracking-mono); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+function pick(names) {
+  for (const k of Object.getOwnPropertyNames(window)) {
+    try {
+      const v = window[k];
+      if (v && typeof v === "object" && !(v instanceof Window) && names.every(n => typeof v[n] === "function")) return v;
+    } catch (e) { /* cross-origin or throwing getter */ }
+  }
+  return {};
+}
+const { Button, IconButton, Icon, Kbd, Badge, Tag, Card } = pick(["Button","IconButton","Icon","Kbd","Badge","Tag","Card"]);
+
+function Demo() {
+  return (
+    <div className="col">
+      <div className="grp">
+        <Button variant="primary" icon="circle">Gravar</Button>
+        <Button variant="secondary">Cancelar</Button>
+        <Button variant="ghost" icon="sparkles">Melhorar notas</Button>
+        <Button variant="danger" icon="trash-2">Apagar</Button>
+        <Button variant="primary" disabled>Desabilitado</Button>
+      </div>
+      <div className="grp">
+        <Button size="sm" variant="secondary">sm 22px</Button>
+        <Button size="md" variant="secondary">md 28px</Button>
+        <Button size="lg" variant="secondary" iconRight="chevron-right">lg 34px</Button>
+        <span style={{ display: "flex", gap: 4 }}>
+          <IconButton icon="search" title="Buscar" />
+          <IconButton icon="audio-lines" title="Transcript" active />
+          <IconButton icon="settings" title="Ajustes" />
+        </span>
+        <Kbd keys={["⌘","⇧","O"]} />
+        <Kbd keys={["fn"]} />
+      </div>
+      <div className="grp">
+        <Badge tone="live" dot>ao vivo · 12:04</Badge>
+        <Badge tone="local">local</Badge>
+        <Badge tone="cloud">nuvem</Badge>
+        <Badge tone="neutral">rascunho</Badge>
+        <Badge tone="danger">falhou</Badge>
+        <Tag icon="user">Eric</Tag>
+        <Tag icon="building-2">Superior Grocers</Tag>
+        <Tag icon="folder" onRemove={() => {}}>Pipa</Tag>
+      </div>
+      <div className="grp" style={{ alignItems: "stretch" }}>
+        <Card padding="sm" style={{ width: 200 }}>
+          <div style={{ font: "var(--type-ui-medium)" }}>Card · shadow-card</div>
+          <div className="lbl" style={{ marginTop: 4 }}>10px radius · hairline ring</div>
+        </Card>
+        <Card inset padding="sm" style={{ width: 200 }}>
+          <div style={{ font: "var(--type-ui-medium)" }}>Card inset</div>
+          <div className="lbl" style={{ marginTop: 4 }}>bg-inset · no drop shadow</div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+const __root = ReactDOM.createRoot(document.getElementById("root"));
+__root.render(typeof Button === "function" ? <Demo /> : (
+  <pre style={{ font: "var(--type-mono)", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
+    _ds_bundle.js ainda não foi gerado. Os componentes aparecem aqui depois que o design system é compilado.
+  </pre>
+));
+</script>
+</body>
+</html>

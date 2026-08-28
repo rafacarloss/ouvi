@@ -41,8 +41,8 @@ public final class MeetingIntelligence {
             let t = String(format: "%02d:%02d", segment.startMs / 60000, (segment.startMs / 1000) % 60)
             let who: String
             switch segment.channel {
-            case .me: who = "Eu"
-            case .them: who = segment.speakerID.flatMap { names[$0] } ?? "Participante"
+            case .me: who = "Você"
+            case .them: who = segment.speakerID.flatMap { names[$0] } ?? "Falante"
             }
             return "[\(t)] \(who): \(segment.text)"
         }.joined(separator: "\n")

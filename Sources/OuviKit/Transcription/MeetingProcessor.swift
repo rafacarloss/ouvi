@@ -56,7 +56,7 @@ public final class MeetingProcessor {
             var unnamedIndex = 1
             for (cluster, centroid) in centroids where matched[cluster] == nil {
                 let speaker = Speaker(
-                    name: "Participante \(unnamedIndex)",
+                    name: "Falante \(unnamedIndex)",
                     voiceCentroid: centroid.toData(),
                     enrollmentCount: 1)
                 newSpeakers.append(speaker)

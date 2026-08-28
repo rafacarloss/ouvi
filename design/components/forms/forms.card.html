@@ -1,0 +1,67 @@
+<!-- @dsCard group="Components" viewport="700x260" name="Forms — fields, toggles, segments" subtitle="Inset fields, green focus ring, mono values for machine identifiers" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .grp { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: var(--space-4); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-faint); letter-spacing: var(--tracking-mono); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+function pick(names) {
+  for (const k of Object.getOwnPropertyNames(window)) {
+    try {
+      const v = window[k];
+      if (v && typeof v === "object" && !(v instanceof Window) && names.every(n => typeof v[n] === "function")) return v;
+    } catch (e) { /* cross-origin or throwing getter */ }
+  }
+  return {};
+}
+const { Input, SearchField, Select, Checkbox, Switch, SegmentedControl } = pick(["Input","SearchField","Select","Checkbox","Switch","SegmentedControl"]);
+
+function Demo() {
+  const [tab, setTab] = React.useState("Notas");
+  const [cloud, setCloud] = React.useState(true);
+  const [warn, setWarn] = React.useState(true);
+  return (
+    <div className="col">
+      <div className="grp">
+        <div style={{ width: 190 }}><Input placeholder="Nome do falante" /></div>
+        <div style={{ width: 190 }}><Input defaultValue="sk-ant-…" invalid /></div>
+        <div style={{ width: 230 }}><SearchField placeholder="Buscar em tudo" shortcut={["⌘","K"]} /></div>
+      </div>
+      <div className="grp">
+        <Select mono options={["parakeet-tdt-0.6b-v3","whisper-large-v3-turbo","qwen3-asr-1.7b"]} />
+        <Select options={["Português (BR)","English (US)","Detectar automaticamente"]} />
+        <SegmentedControl options={["Notas","Transcript","Resumo"]} value={tab} onChange={setTab} />
+        <SegmentedControl size="sm" options={["PT","EN"]} value="PT" onChange={() => {}} />
+      </div>
+      <div className="grp" style={{ gap: "var(--space-8)", alignItems: "flex-start" }}>
+        <Checkbox checked={warn} onChange={setWarn} label="Avisar que estou gravando" description="Mostra um aviso 5 s antes de começar." />
+        <div className="col" style={{ gap: "var(--space-3)" }}>
+          <Switch checked={cloud} onChange={setCloud} label="Permitir Claude API" />
+          <Switch checked={false} onChange={() => {}} label="Abrir no login" />
+        </div>
+      </div>
+    </div>
+  );
+}
+const __root = ReactDOM.createRoot(document.getElementById("root"));
+__root.render(typeof Input === "function" ? <Demo /> : (
+  <pre style={{ font: "var(--type-mono)", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
+    _ds_bundle.js ainda não foi gerado. Os componentes aparecem aqui depois que o design system é compilado.
+  </pre>
+));
+</script>
+</body>
+</html>

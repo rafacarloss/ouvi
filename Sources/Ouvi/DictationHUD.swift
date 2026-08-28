@@ -69,19 +69,21 @@ struct DictationPillView: View {
                 ProgressView()
                     .controlSize(.small)
                 Text("Transcrevendo…")
-                    .font(.callout)
+                    .font(DS.body)
+                    .foregroundStyle(DS.textMuted)
             } else {
-                Image(systemName: "mic.fill")
-                    .foregroundStyle(.red)
+                Circle().fill(DS.live).frame(width: 8, height: 8)
+                    .shadow(color: DS.liveGlow, radius: 5)
                 LevelBars(level: controller.level)
-                Text("Solte para inserir")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                Text("Fale.")
+                    .font(DS.bodyMedium)
+                    .foregroundStyle(DS.textBody)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(DS.borderHairline, lineWidth: 0.5))
         .frame(width: 220, height: 44)
     }
 }
@@ -93,7 +95,7 @@ struct LevelBars: View {
         HStack(spacing: 2) {
             ForEach(0..<5, id: \.self) { i in
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(Color.red.opacity(barActive(i) ? 0.9 : 0.25))
+                    .fill(DS.live.opacity(barActive(i) ? 0.9 : 0.25))
                     .frame(width: 3, height: barActive(i) ? 16 : 8)
             }
         }

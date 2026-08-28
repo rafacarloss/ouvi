@@ -11,6 +11,8 @@ struct OuviApp: App {
             MainWindow()
                 .environmentObject(state)
                 .frame(minWidth: 900, minHeight: 560)
+                .tint(DS.accent)
+                .font(DS.body)
         }
 
         MenuBarExtra {
@@ -28,6 +30,10 @@ struct OuviApp: App {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        DS.registerFonts()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         DictationHUD.shared.attach(to: AppState.shared.dictation)
     }

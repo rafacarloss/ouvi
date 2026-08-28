@@ -51,10 +51,10 @@ public final class ImportService {
             let matched = DiarizationService.matchClusters(centroids: centroids, knownSpeakers: knownSpeakers)
             var clusterToSpeakerID = matched
             var newSpeakers: [Speaker] = []
-            var unnamedIndex = knownSpeakers.filter { $0.name.hasPrefix("Participante ") }.count + 1
+            var unnamedIndex = knownSpeakers.filter { $0.name.hasPrefix("Falante ") }.count + 1
             for (cluster, centroid) in centroids where matched[cluster] == nil {
                 let speaker = Speaker(
-                    name: "Participante \(unnamedIndex)",
+                    name: "Falante \(unnamedIndex)",
                     voiceCentroid: centroid.toData(),
                     enrollmentCount: 1)
                 newSpeakers.append(speaker)

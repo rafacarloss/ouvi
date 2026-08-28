@@ -1,0 +1,23 @@
+<!-- @dsCard group="Spacing" viewport="700x140" name="Corner radii" subtitle="Controls 5px, cards 10px, windows/sheets 12–14px, pills round" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .row { display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: var(--space-2); }
+  .chip { width: 84px; height: 44px; border-radius: var(--radius-md); box-shadow: inset 0 0 0 0.5px var(--border-hairline); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-muted); letter-spacing: var(--tracking-mono); }
+  .lbl b { color: var(--text-body); font-weight: 400; display: block; }
+  .tag { font: var(--type-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-faint); }
+
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="sw"><div style="width:74px;height:46px;border-radius:3px;background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl"><b>--radius-xs</b>3px</span></div><div class="sw"><div style="width:74px;height:46px;border-radius:5px;background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl"><b>--radius-sm</b>5px</span></div><div class="sw"><div style="width:74px;height:46px;border-radius:7px;background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl"><b>--radius-md</b>7px</span></div><div class="sw"><div style="width:74px;height:46px;border-radius:10px;background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl"><b>--radius-lg</b>10px</span></div><div class="sw"><div style="width:74px;height:46px;border-radius:14px;background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl"><b>--radius-xl</b>14px</span></div><div class="sw"><div style="width:74px;height:46px;border-radius:20px;background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl"><b>--radius-2xl</b>20px</span></div><div class="sw"><div style="width:74px;height:46px;border-radius:999px;background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl"><b>--radius-pill</b>999px</span></div>
+</div>
+</body>
+</html>

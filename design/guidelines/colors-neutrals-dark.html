@@ -1,0 +1,30 @@
+<!-- @dsCard group="Colors" viewport="700x140" name="Neutrals — graphite (dark)" subtitle="Never pure black, never blue-tinted; equal weight to light" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .row { display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: var(--space-2); }
+  .chip { width: 84px; height: 44px; border-radius: var(--radius-md); box-shadow: inset 0 0 0 0.5px var(--border-hairline); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-muted); letter-spacing: var(--tracking-mono); }
+  .lbl b { color: var(--text-body); font-weight: 400; display: block; }
+  .tag { font: var(--type-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-faint); }
+
+</style>
+</head>
+<body>
+<div class="row">
+  <div class="sw"><div class="chip" style="background:#121315"></div><div class="lbl"><b>--paper-0</b>window</div></div>
+  <div class="sw"><div class="chip" style="background:#1a1c1f"></div><div class="lbl"><b>--paper-1</b>surface</div></div>
+  <div class="sw"><div class="chip" style="background:#16181a"></div><div class="lbl"><b>--paper-2</b>sidebar</div></div>
+  <div class="sw"><div class="chip" style="background:#23262a"></div><div class="lbl"><b>--paper-3</b>hover/track</div></div>
+  <div class="sw"><div class="chip" style="background:#2e3237"></div><div class="lbl"><b>--paper-4</b>pressed</div></div>
+  <div class="sw"><div class="chip" style="background:#71777d"></div><div class="lbl"><b>--ink-3</b>faint</div></div>
+  <div class="sw"><div class="chip" style="background:#a6acb2"></div><div class="lbl"><b>--ink-2</b>muted</div></div>
+  <div class="sw"><div class="chip" style="background:#f1f2f2"></div><div class="lbl"><b>--ink-1</b>body</div></div>
+</div>
+</body>
+</html>

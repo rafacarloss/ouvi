@@ -86,9 +86,9 @@ public final class VaultWriter {
                 let t = String(format: "%02d:%02d", segment.startMs / 60000, (segment.startMs / 1000) % 60)
                 let who: String
                 switch segment.channel {
-                case .me: who = "Eu"
+                case .me: who = "Você"
                 case .them:
-                    let name = segment.speakerID.flatMap { names[$0] } ?? "Participante"
+                    let name = segment.speakerID.flatMap { names[$0] } ?? "Falante"
                     who = "[[\(name)]]"
                 }
                 md += "**[\(t)] \(who):** \(segment.text)\n\n"
@@ -116,7 +116,7 @@ public final class VaultWriter {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
 
-        for speaker in speakers where !speaker.name.hasPrefix("Participante ") {
+        for speaker in speakers where !speaker.name.hasPrefix("Falante ") {
             let speakerSessions = try database.pool.read { db in
                 try TranscriptSegment
                     .filter(Column("speaker_id") == speaker.id)

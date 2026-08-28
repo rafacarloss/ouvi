@@ -19,7 +19,7 @@ public enum ExportService {
         let names = Dictionary(uniqueKeysWithValues: speakers.map { ($0.id, $0.name) })
 
         func speaker(_ segment: TranscriptSegment) -> String {
-            segment.channel == .me ? "Eu" : (segment.speakerID.flatMap { names[$0] } ?? "Participante")
+            segment.channel == .me ? "Você" : (segment.speakerID.flatMap { names[$0] } ?? "Falante")
         }
 
         switch format {

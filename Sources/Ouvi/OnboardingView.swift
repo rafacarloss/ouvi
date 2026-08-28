@@ -15,10 +15,17 @@ struct OnboardingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Bem-vindo ao Ouvi")
-                    .font(.largeTitle.weight(.bold))
-                Text("Reuniões transcritas e ditado por voz — tudo processado no seu Mac, salvo em arquivos Markdown seus.")
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    Text("ouvi")
+                        .font(DS.sans(34, .black))
+                        .tracking(-1.0)
+                        .foregroundStyle(DS.textTitle)
+                    Circle().fill(DS.accent).frame(width: 8, height: 8)
+                        .offset(y: 8)
+                }
+                Text("Suas reuniões, sua voz, seus arquivos. Transcrição feita neste Mac — nada sai do dispositivo.")
+                    .font(DS.body)
+                    .foregroundStyle(DS.textMuted)
             }
 
             VStack(alignment: .leading, spacing: 12) {

@@ -1,0 +1,32 @@
+<!-- @dsCard group="Website" viewport="1180x820" name="ouvi.app — landing + docs" subtitle="Open-source landing page and docs, same tokens as the app" -->
+<!-- @startingPoint section="Website" subtitle="Open-source landing page and docs page" viewport="1180x820" -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Ouvi — UI kit (site)</title>
+<link rel="stylesheet" href="../../styles.css">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+window.DS = {};
+const FILES = ["../../components/core/Icon.jsx","../../components/core/Button.jsx","../../components/core/IconButton.jsx","../../components/core/Kbd.jsx","../../components/core/Badge.jsx","../../components/core/Tag.jsx","../../components/core/Card.jsx","../../components/forms/Input.jsx","../../components/forms/SearchField.jsx","../../components/forms/Select.jsx","../../components/forms/Checkbox.jsx","../../components/forms/Switch.jsx","../../components/forms/SegmentedControl.jsx","../../components/navigation/SidebarItem.jsx","../../components/navigation/Tabs.jsx","../../components/navigation/Toolbar.jsx","../../components/feedback/Toast.jsx","../../components/feedback/Tooltip.jsx","../../components/feedback/ProgressBar.jsx","../../components/feedback/EmptyState.jsx","../../components/meeting/Waveform.jsx","../../components/meeting/RecordButton.jsx","../../components/meeting/TimeCode.jsx","../../components/meeting/SpeakerChip.jsx","../../components/meeting/TranscriptLine.jsx","../../components/meeting/Citation.jsx","../../components/meeting/SessionRow.jsx","../../components/meeting/PrivacyBadge.jsx","../../components/dictation/DictationPill.jsx","./Placeholder.jsx","./Landing.jsx","./Docs.jsx","./Site.jsx"];
+async function loadModule(path) {
+  const raw = await (await fetch(path)).text();
+  const src = raw.replace(/^\s*import .*?;\s*$/gm, "").replace(/export\s+function/g, "function");
+  const names = Array.from(src.matchAll(/^function\s+([A-Z][A-Za-z0-9_]*)/gm), m => m[1]);
+  const code = Babel.transform(src, { presets: ["react"] }).code;
+  const argNames = Object.keys(window.DS);
+  new Function("React", ...argNames, code + "\n" + names.map(n => "window.DS." + n + " = " + n + ";").join("\n"))(React, ...argNames.map(k => window.DS[k]));
+}
+(async () => {
+  for (const p of FILES) { try { await loadModule(p); } catch (e) { console.error("failed:", p, e.message); } }
+  ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(window.DS.Site));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!-- @dsCard group="Components" viewport="700x290" name="Navigation — sidebar, tabs, toolbar" subtitle="248px source list, underlined tabs, 44px toolbar" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .grp { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: var(--space-4); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-faint); letter-spacing: var(--tracking-mono); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+function pick(names) {
+  for (const k of Object.getOwnPropertyNames(window)) {
+    try {
+      const v = window[k];
+      if (v && typeof v === "object" && !(v instanceof Window) && names.every(n => typeof v[n] === "function")) return v;
+    } catch (e) { /* cross-origin or throwing getter */ }
+  }
+  return {};
+}
+const { SidebarItem, Tabs, Toolbar } = pick(["SidebarItem","Tabs","Toolbar"]);
+const { IconButton, Badge } = pick(["IconButton","Badge"]);
+const { SearchField } = pick(["SearchField","Input"]);
+
+function Demo() {
+  const [sel, setSel] = React.useState("Hoje");
+  const [tab, setTab] = React.useState("Reuniões");
+  return (
+    <div className="col">
+      <div style={{ display: "flex", gap: 20 }}>
+        <div style={{ width: 248, background: "var(--bg-sidebar)", borderRadius: "var(--radius-lg)", padding: "var(--space-3)", boxShadow: "inset 0 0 0 0.5px var(--border-hairline)" }}>
+          {[["calendar","Hoje",3],["audio-lines","Todas as reuniões",128],["users","Pessoas",41],["building-2","Empresas",12]].map(([i,l,c]) => (
+            <SidebarItem key={l} icon={i} label={l} count={c} selected={sel === l} onClick={() => setSel(l)} />
+          ))}
+          <div style={{ font: "var(--type-micro)", textTransform: "uppercase", letterSpacing: "var(--tracking-label)", color: "var(--text-faint)", padding: "12px 8px 4px" }}>Projetos</div>
+          {[["folder","Giro"],["folder","Aval"],["folder","Pipa"]].map(([i,l]) => (
+            <SidebarItem key={l} icon={i} label={l} indent={1} selected={sel === l} onClick={() => setSel(l)} />
+          ))}
+        </div>
+        <div className="col" style={{ flex: 1 }}>
+          <div style={{ borderRadius: "var(--radius-lg)", overflow: "hidden", boxShadow: "var(--shadow-card)" }}>
+            <Toolbar
+              leading={<span style={{ font: "var(--type-ui-medium)" }}>Discovery — Superior Grocers</span>}
+              trailing={<span style={{ display: "flex", gap: 4 }}><IconButton icon="sparkles" title="Melhorar" /><IconButton icon="audio-lines" title="Transcript" active /></span>}
+            >
+              <div style={{ width: 200 }}><SearchField shortcut={["⌘","K"]} /></div>
+            </Toolbar>
+            <div style={{ background: "var(--bg-surface)", padding: "var(--space-4)" }}>
+              <Tabs tabs={["Reuniões","Pessoas","Empresas"]} value={tab} onChange={setTab} />
+              <div className="lbl" style={{ marginTop: 12 }}>Toolbar 44px · Tabs underline = --accent · SidebarItem 30px</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+const __root = ReactDOM.createRoot(document.getElementById("root"));
+__root.render(typeof SidebarItem === "function" ? <Demo /> : (
+  <pre style={{ font: "var(--type-mono)", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
+    _ds_bundle.js ainda não foi gerado. Os componentes aparecem aqui depois que o design system é compilado.
+  </pre>
+));
+</script>
+</body>
+</html>

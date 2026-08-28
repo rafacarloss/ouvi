@@ -19,8 +19,10 @@ cp "$BIN/Ouvi" "$APP/Contents/MacOS/Ouvi"
 cp "$BIN/ouvi-mcp" "$APP/Contents/Helpers/ouvi-mcp"
 cp "$BIN/ouvi-cli" "$APP/Contents/Helpers/ouvi-cli"
 
-# SPM resource bundles (FluidAudio ships one)
-find "$BIN" -maxdepth 1 -name "*.bundle" -exec cp -R {} "$APP/Contents/Resources/" \;
+# SPM resource bundles (fonts, FluidAudio assets). $BIN is a symlink — glob, not find.
+for bundle in "$BIN"/*.bundle; do
+  [ -e "$bundle" ] && cp -R "$bundle" "$APP/Contents/Resources/"
+done
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

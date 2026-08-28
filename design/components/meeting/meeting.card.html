@@ -1,0 +1,72 @@
+<!-- @dsCard group="Components" viewport="700x380" name="Meeting — record, waveform, transcript, citations" subtitle="Draft text stays faint; every AI sentence carries a timecode citation" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .grp { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: var(--space-4); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-faint); letter-spacing: var(--tracking-mono); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+function pick(names) {
+  for (const k of Object.getOwnPropertyNames(window)) {
+    try {
+      const v = window[k];
+      if (v && typeof v === "object" && !(v instanceof Window) && names.every(n => typeof v[n] === "function")) return v;
+    } catch (e) { /* cross-origin or throwing getter */ }
+  }
+  return {};
+}
+const { RecordButton, Waveform, TranscriptLine, SpeakerChip, TimeCode, Citation, SessionRow, PrivacyBadge } =
+  pick(["RecordButton","Waveform","TranscriptLine","SpeakerChip","TimeCode","Citation","SessionRow","PrivacyBadge"]);
+
+function Demo() {
+  const [state, setState] = React.useState("recording");
+  return (
+    <div className="col">
+      <div className="grp">
+        <RecordButton state="idle" onClick={() => setState("recording")} />
+        <RecordButton state="armed" />
+        <RecordButton state={state === "recording" ? "recording" : "idle"} elapsed="12:04" onClick={() => setState(state === "recording" ? "idle" : "recording")} />
+        <Waveform bars={22} live />
+        <Waveform bars={22} live={false} />
+      </div>
+      <div className="grp">
+        <PrivacyBadge mode="local" detail="transcrição e busca neste Mac" />
+        <PrivacyBadge mode="cloud" detail="resumo — só texto" />
+      </div>
+      <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)", padding: "var(--space-3)" }}>
+        <TranscriptLine speaker="Você" slot={0} time="00:14:22" onSeek={() => {}} text="Eles pediram um piloto de 60 dias com dois times, e a única condição foi que o dado ficasse dentro da infra deles." />
+        <TranscriptLine speaker="Eric" slot={1} time="00:14:41" active onSeek={() => {}} text="Consigo aprovar isso essa semana se você me mandar o escopo." />
+        <TranscriptLine speaker="Falante 3" slot={2} unnamed draft time="00:14:48" onSeek={() => {}} text="então o próximo passo seria mandar o escopo até quinta e-- aliás, até sexta, porque quinta tem feriado" />
+      </div>
+      <div style={{ font: "var(--type-reading)", maxWidth: "58ch" }}>
+        Piloto de 60 dias aprovado com dois times, condicionado a dado on-prem.<Citation time="14:22" onClick={() => {}} />
+      </div>
+      <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)", padding: "var(--space-2)" }}>
+        <SessionRow title="Discovery — Superior Grocers" when="hoje 14:00" duration="41 min" speakers="3 falantes" selected />
+        <SessionRow title="1:1 — Eric" when="ontem 09:30" duration="24 min" speakers="2 falantes" cloud />
+        <SessionRow title="Pipa — pipeline review" when="ao vivo" live />
+      </div>
+    </div>
+  );
+}
+const __root = ReactDOM.createRoot(document.getElementById("root"));
+__root.render(typeof RecordButton === "function" ? <Demo /> : (
+  <pre style={{ font: "var(--type-mono)", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
+    _ds_bundle.js ainda não foi gerado. Os componentes aparecem aqui depois que o design system é compilado.
+  </pre>
+));
+</script>
+</body>
+</html>

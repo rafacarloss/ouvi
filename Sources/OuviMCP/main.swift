@@ -155,7 +155,7 @@ let tools: [ToolDef] = [
         schema: ["type": "object", "properties": [String: Any]()],
         run: { _ in
             let speakers = (try? database.pool.read { try Speaker.fetchAll($0) }) ?? []
-            let named = speakers.filter { !$0.name.hasPrefix("Participante ") }
+            let named = speakers.filter { !$0.name.hasPrefix("Falante ") }
             guard !named.isEmpty else { return "No named people yet." }
             return named.map { "\($0.name)\($0.company.map { " (\($0))" } ?? "")" }.joined(separator: "\n")
         }),

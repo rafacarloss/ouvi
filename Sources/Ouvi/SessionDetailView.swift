@@ -83,7 +83,7 @@ struct SessionDetailView: View {
                         persistNote()
                     }
                 } label: {
-                    Label("Aprimorar notas", systemImage: "wand.and.stars")
+                    Label("Melhorar notas", systemImage: "sparkles")
                 }
                 .disabled(busy != nil || segments.isEmpty || notes.isEmpty)
 
@@ -195,8 +195,8 @@ struct SessionDetailView: View {
 
     private func name(for segment: TranscriptSegment) -> String {
         switch segment.channel {
-        case .me: return "Eu"
-        case .them: return segment.speakerID.flatMap { speakerNames[$0] } ?? "Participante"
+        case .me: return "Você"
+        case .them: return segment.speakerID.flatMap { speakerNames[$0] } ?? "Falante"
         }
     }
 
@@ -296,15 +296,20 @@ struct LiveTranscriptView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label("Ao vivo (rascunho)", systemImage: "dot.radiowaves.left.and.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.red)
+            HStack(spacing: 7) {
+                Circle().fill(DS.live).frame(width: 7, height: 7)
+                MicroBadge(text: "RASCUNHO")
+                Text("refinando ao final")
+                    .font(DS.caption)
+                    .foregroundStyle(DS.textFaint)
+            }
             channelView(label: "Eles", text: state.liveThem)
-            channelView(label: "Eu", text: state.liveMe)
+            channelView(label: "Você", text: state.liveMe)
         }
-        .padding(10)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
+        .background(DS.bgSurface, in: RoundedRectangle(cornerRadius: DS.radiusCard))
+        .overlay(RoundedRectangle(cornerRadius: DS.radiusCard).strokeBorder(DS.borderHairline, lineWidth: 0.5))
     }
 
     @ViewBuilder
@@ -312,10 +317,13 @@ struct LiveTranscriptView: View {
         if !text.confirmed.isEmpty || !text.volatile.isEmpty {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                (Text(text.confirmed) + Text(text.confirmed.isEmpty ? "" : " ") + Text(text.volatile).foregroundStyle(.tertiary))
-                    .font(.callout)
+                    .font(DS.sans(12, .medium))
+                    .foregroundStyle(DS.textMuted)
+                (Text(text.confirmed).foregroundStyle(DS.textBody)
+                    + Text(text.confirmed.isEmpty ? "" : " ")
+                    + Text(text.volatile).foregroundStyle(DS.textDraft))
+                    .font(DS.reading)
+                    .lineSpacing(4)
             }
         }
     }
@@ -327,28 +335,46 @@ struct SegmentView: View {
     let onRename: () -> Void
     let onSeek: () -> Void
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 6) {
-                Button(action: onSeek) {
-                    Text(timestamp)
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
-                Text(speakerName)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(segment.channel == .me ? Color.accentColor : .secondary)
-                    .onTapGesture(count: 2) { onRename() }
-                    .help(segment.channel == .them ? "Duplo clique para nomear" : "")
-            }
-            Text(segment.text)
-                .textSelection(.enabled)
-        }
+    private var speakerColor: Color {
+        segment.channel == .me ? DS.speakerMe : DS.speakerColor(for: segment.speakerID)
     }
 
-    private var timestamp: String {
-        String(format: "%02d:%02d", segment.startMs / 60000, (segment.startMs / 1000) % 60)
+    private var isUnnamed: Bool {
+        segment.channel == .them && speakerName.hasPrefix("Falante")
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            // 3px speaker rule — the only place speaker color appears.
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(speakerColor)
+                .frame(width: 3)
+                .padding(.vertical, 2)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(speakerName)
+                        .font(DS.sans(12, .medium))
+                        .foregroundStyle(DS.textMuted)
+                        .onTapGesture(count: 2) { onRename() }
+                    if isUnnamed {
+                        Button("dar nome", action: onRename)
+                            .buttonStyle(.plain)
+                            .font(DS.caption)
+                            .foregroundStyle(DS.accentHover)
+                    }
+                    Button(action: onSeek) {
+                        TimeCode(ms: segment.startMs)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Ouvir este trecho")
+                }
+                Text(segment.text)
+                    .font(DS.reading)
+                    .foregroundStyle(segment.isDraft ? DS.textDraft : DS.textBody)
+                    .lineSpacing(4)
+                    .textSelection(.enabled)
+            }
+        }
     }
 }
 
@@ -358,27 +384,43 @@ struct SummaryView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(summary.overview)
-                .foregroundStyle(.secondary)
+                .font(DS.reading)
+                .foregroundStyle(DS.textMuted)
+                .lineSpacing(4)
             ForEach(summary.topics.indices, id: \.self) { i in
                 let topic = summary.topics[i]
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(topic.heading).font(.subheadline.weight(.semibold))
+                    Text(topic.heading)
+                        .font(DS.sans(13, .medium))
+                        .foregroundStyle(DS.textTitle)
                     ForEach(topic.bullets.indices, id: \.self) { j in
-                        Text("• \(topic.bullets[j])")
+                        Text("–  \(topic.bullets[j])")
+                            .font(DS.body)
+                            .foregroundStyle(DS.textBody)
                     }
                 }
             }
             if !summary.actionItems.isEmpty {
-                Text("Action items").font(.subheadline.weight(.semibold))
+                Text("Action items")
+                    .font(DS.sans(13, .medium))
+                    .foregroundStyle(DS.textTitle)
                 ForEach(summary.actionItems.indices, id: \.self) { i in
                     let item = summary.actionItems[i]
-                    Text("☐ \(item.owner.map { "\($0): " } ?? "")\(item.text)")
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "square")
+                            .font(.system(size: 10))
+                            .foregroundStyle(DS.textFaint)
+                            .padding(.top, 3)
+                        Text("\(item.owner.map { "\($0) — " } ?? "")\(item.text)")
+                            .font(DS.body)
+                    }
                 }
             }
         }
-        .padding(12)
+        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 10))
+        .background(DS.bgSurface, in: RoundedRectangle(cornerRadius: DS.radiusCard))
+        .overlay(RoundedRectangle(cornerRadius: DS.radiusCard).strokeBorder(DS.borderHairline, lineWidth: 0.5))
     }
 }
 
@@ -391,8 +433,8 @@ struct RenameSpeakerSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Quem é esse participante?")
-                .font(.headline)
+            Text("Quem está falando?")
+                .font(DS.title3)
             TextField("Nome", text: $name)
             TextField("Empresa (opcional)", text: $company)
             Text("O Ouvi vai reconhecer essa voz nas próximas reuniões — o perfil de voz fica só no seu Mac.")
@@ -412,7 +454,7 @@ struct RenameSpeakerSheet: View {
         .padding(20)
         .frame(width: 360)
         .onAppear {
-            name = speaker.name.hasPrefix("Participante ") ? "" : speaker.name
+            name = speaker.name.hasPrefix("Falante ") ? "" : speaker.name
             company = speaker.company ?? ""
         }
     }

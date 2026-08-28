@@ -1,0 +1,30 @@
+/* Two-part shadows: a hairline ring for definition + a soft drop for lift.
+   Dark theme leans on the ring, not the blur. */
+:root {
+  --shadow-none: none;
+  --shadow-inset-field: inset 0 1px 0 rgba(18, 20, 22, 0.05);
+  --shadow-control: 0 1px 1px rgba(18, 20, 22, 0.05), 0 0 0 0.5px rgba(18, 20, 22, 0.12);
+  --shadow-card: 0 1px 2px rgba(18, 20, 22, 0.05), 0 0 0 0.5px rgba(18, 20, 22, 0.08);
+  --shadow-raised: 0 4px 12px rgba(18, 20, 22, 0.08), 0 0 0 0.5px rgba(18, 20, 22, 0.1);
+  --shadow-popover: 0 8px 28px rgba(18, 20, 22, 0.14), 0 0 0 0.5px rgba(18, 20, 22, 0.12);
+  --shadow-sheet: 0 24px 64px rgba(18, 20, 22, 0.22), 0 0 0 0.5px rgba(18, 20, 22, 0.14);
+  --shadow-hud: 0 12px 40px rgba(18, 20, 22, 0.28), 0 0 0 0.5px rgba(18, 20, 22, 0.16);
+  --glow-live: 0 0 0 4px var(--live-glow);
+
+  --blur-vibrancy: saturate(180%) blur(24px);
+  --blur-hud: saturate(160%) blur(32px);
+  --vibrancy-tint: rgba(251, 251, 249, 0.72);
+  --hud-tint: rgba(255, 255, 255, 0.78);
+}
+
+[data-theme="dark"] {
+  --shadow-inset-field: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --shadow-control: 0 1px 1px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+  --shadow-popover: 0 10px 32px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+  --shadow-sheet: 0 28px 72px rgba(0, 0, 0, 0.7), 0 0 0 0.5px rgba(255, 255, 255, 0.14);
+  --shadow-hud: 0 14px 44px rgba(0, 0, 0, 0.66), 0 0 0 0.5px rgba(255, 255, 255, 0.14);
+  --vibrancy-tint: rgba(22, 24, 26, 0.68);
+  --hud-tint: rgba(26, 28, 31, 0.8);
+}

@@ -46,6 +46,9 @@ let package = Package(
             dependencies: [
                 "OuviKit",
             ],
+            resources: [
+                .copy("Resources/Fonts"),
+            ],
             swiftSettings: swiftSettings
         ),
         .executableTarget(
