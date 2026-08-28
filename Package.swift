@@ -18,13 +18,13 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.12.4"),
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.0.0"),
-        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts.git", from: "2.0.0"),
     ],
     targets: [
         // Vendored sqlite-vec (v0.1.9) statically linked and registered via sqlite3_auto_extension.
         .target(
             name: "CSQLiteVec",
             cSettings: [
+                .define("SQLITE_CORE"),
                 .define("SQLITE_VEC_STATIC"),
             ],
             linkerSettings: [
@@ -44,7 +44,6 @@ let package = Package(
             name: "Ouvi",
             dependencies: [
                 "OuviKit",
-                .product(name: "KeyboardShortcuts", package: "KeyboardShortcuts"),
             ],
             swiftSettings: swiftSettings
         ),

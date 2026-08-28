@@ -1,5 +1,5 @@
 {
-  "originHash" : "e48f1a4667fe3e8d54453d943451506023fdca41116e292e01ee715324a3ebb6",
+  "originHash" : "90464011bf5d1ceaf39436817e8f10547256cb6b1501955c86cc26a7fdcf53be",
   "pins" : [
     {
       "identity" : "fluidaudio",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "b83108d10f42680d78f23fe4d4d80fc88dab3212",
         "version" : "7.11.1"
-      }
-    },
-    {
-      "identity" : "keyboardshortcuts",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sindresorhus/KeyboardShortcuts.git",
-      "state" : {
-        "revision" : "1aef85578fdd4f9eaeeb8d53b7b4fc31bf08fe27",
-        "version" : "2.4.0"
       }
     }
   ],

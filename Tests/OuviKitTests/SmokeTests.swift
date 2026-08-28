@@ -1,8 +1,8 @@
-import XCTest
+import Testing
 @testable import OuviKit
 
-final class SmokeTests: XCTestCase {
-    func testVersion() {
-        XCTAssertFalse(OuviInfo.version.isEmpty)
+@Suite struct SmokeTests {
+    @Test func version() {
+        #expect(!OuviInfo.version.isEmpty)
     }
 }
