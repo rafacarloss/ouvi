@@ -7,3 +7,4 @@ dist/
 *.dSYM
 .DS_Store
 .testdata/
+dist/
