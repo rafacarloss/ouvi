@@ -84,6 +84,58 @@ case "diarize":
     }
     semaphore.wait()
 
+case "import":
+    guard arguments.count >= 3 else {
+        eprint("usage: ouvi-cli import <audio-file> [--lang pt|en]")
+        exit(64)
+    }
+    let url = URL(fileURLWithPath: arguments[2])
+    var lang: String? = nil
+    if let idx = arguments.firstIndex(of: "--lang"), idx + 1 < arguments.count {
+        lang = arguments[idx + 1]
+    }
+    let semaphore = DispatchSemaphore(value: 0)
+    Task {
+        do {
+            let db = try OuviDatabase.openDefault()
+            let service = ImportService(database: db)
+            let sessionID = try await service.importFile(at: url, languageHint: lang) { progress in
+                eprint("… \(progress.stage.rawValue)")
+            }
+            let segments = try db.segments(sessionID: sessionID)
+            print("imported as session \(sessionID) — \(segments.count) segments")
+            for segment in segments.prefix(8) {
+                let t = String(format: "%02d:%02d", segment.startMs / 60000, (segment.startMs / 1000) % 60)
+                print("[\(t)] \(segment.text)")
+            }
+            exit(0)
+        } catch {
+            eprint("import failed: \(error)")
+            exit(1)
+        }
+    }
+    semaphore.wait()
+
+case "reindex":
+    let semaphore = DispatchSemaphore(value: 0)
+    Task {
+        do {
+            let db = try OuviDatabase.openDefault()
+            await ChunkIndexer(database: db).reindexAll()
+            let writer = VaultWriter(database: db)
+            for session in (try? db.recentSessions(limit: 100_000)) ?? [] where session.state == .ready {
+                _ = try? writer.writeNote(sessionID: session.id, userNotes: nil, enhancedNotes: nil)
+            }
+            try? writer.writePersonPages()
+            print("reindex complete")
+            exit(0)
+        } catch {
+            eprint("reindex failed: \(error)")
+            exit(1)
+        }
+    }
+    semaphore.wait()
+
 case "doctor":
     // Same self-check as `ouvi-mcp --doctor`.
     let process = Process()

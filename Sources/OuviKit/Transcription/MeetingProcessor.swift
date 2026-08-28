@@ -107,6 +107,7 @@ public final class MeetingProcessor {
             onProgress?(Progress(stage: .archiving))
             try await recording.archiveAudio(streams: streams)
             try recording.markReady(language: languageHint)
+            await ChunkIndexer(database: database).indexSession(sessionID)
             onProgress?(Progress(stage: .done))
             log.info("session \(sessionID) processed: \(segments.count) segments")
         } catch {
