@@ -13,6 +13,7 @@ final class AppState: ObservableObject {
     let database: OuviDatabase
     let dictation: DictationController
     let meetingDetector = MeetingDetector()
+    let calendar = CalendarService()
 
     @Published var sessions: [Session] = []
     @Published var selectedSessionID: String?
@@ -23,9 +24,13 @@ final class AppState: ObservableObject {
     @Published var processingStage: MeetingProcessor.Progress.Stage?
     @Published var lastError: String?
     @Published var meetingPrompt: MeetingDetector.MicUser?
+    @Published var liveMe: (confirmed: String, volatile: String) = ("", "")
+    @Published var liveThem: (confirmed: String, volatile: String) = ("", "")
+    @Published var importing = false
 
     private var levelTimer: Timer?
     private var pendingStreams: RecordingSession.Streams?
+    private var liveTranscriber: LiveTranscriber?
 
     private init() {
         do {
@@ -49,6 +54,7 @@ final class AppState: ObservableObject {
         Task.detached(priority: .background) {
             try? await TranscriptionService.shared.warmUp()
         }
+        Task { await calendar.requestAccessAndStart() }
     }
 
     func refreshSessions() {
@@ -64,11 +70,34 @@ final class AppState: ObservableObject {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "d MMM HH:mm"
         dateFormatter.locale = Locale(identifier: "pt_BR")
+        let calendarMeeting = calendar.currentMeeting
         let session = RecordingSession(
             database: database,
-            title: title ?? "Reunião \(dateFormatter.string(from: Date()))")
+            title: title ?? calendarMeeting?.title ?? "Reunião \(dateFormatter.string(from: Date()))",
+            calendarEventID: calendarMeeting?.id)
+
+        // Live draft transcription, fed from the capture callbacks.
+        liveMe = ("", "")
+        liveThem = ("", "")
+        let live = LiveTranscriber()
+        live.onUpdate = { [weak self] update in
+            guard let self else { return }
+            switch update.channel {
+            case .me: self.liveMe = (update.confirmed, update.volatile)
+            case .them: self.liveThem = (update.confirmed, update.volatile)
+            }
+        }
+        session.onMicBuffer = { [weak live] buffer in live?.feedMic(buffer) }
+        session.onSystemBuffer = { [weak live] buffer in live?.feedSystem(buffer) }
+
         do {
             try session.start()
+            liveTranscriber = live
+            Task {
+                do { try await live.start() } catch {
+                    self.log.error("live transcription unavailable: \(error.localizedDescription)")
+                }
+            }
             recording = session
             meetingPrompt = nil
             recordingElapsed = 0
@@ -95,6 +124,10 @@ final class AppState: ObservableObject {
         levelTimer?.invalidate()
         levelTimer = nil
         recording = nil
+        if let live = liveTranscriber {
+            liveTranscriber = nil
+            Task { await live.stop() }
+        }
         do {
             let streams = try session.stop()
             pendingStreams = streams
@@ -125,6 +158,29 @@ final class AppState: ObservableObject {
             }
         } catch {
             lastError = "Falha ao encerrar a gravação: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: Import
+
+    func importAudioFiles(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        importing = true
+        let languageHint = OuviSettings.effectiveLanguageHint
+        Task {
+            let service = ImportService(database: database)
+            for url in urls {
+                do {
+                    let id = try await service.importFile(at: url, languageHint: languageHint)
+                    await MainActor.run { self.selectedSessionID = id }
+                } catch {
+                    await MainActor.run {
+                        self.lastError = "Falha ao importar \(url.lastPathComponent): \(error.localizedDescription)"
+                    }
+                }
+                await MainActor.run { self.refreshSessions() }
+            }
+            await MainActor.run { self.importing = false }
         }
     }
 

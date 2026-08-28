@@ -26,6 +26,10 @@ public final class SystemAudioTapRecorder {
 
     public private(set) var outputURL: URL?
 
+    /// Called on the audio thread with each captured buffer — used to feed the
+    /// live streaming transcriber. Keep the work minimal.
+    public var onBuffer: ((AVAudioPCMBuffer) -> Void)?
+
     public init() {}
 
     public var isRunning: Bool { ioProcID != nil }
@@ -144,6 +148,7 @@ public final class SystemAudioTapRecorder {
         } catch {
             log.error("tap write failed: \(error.localizedDescription)")
         }
+        onBuffer?(pcm)
     }
 
     public func stop() {

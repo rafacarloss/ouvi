@@ -76,7 +76,7 @@ public struct Session: Codable, Identifiable, Equatable, FetchableRecord, Persis
 public struct TranscriptSegment: Codable, Identifiable, Equatable, FetchableRecord, PersistableRecord {
     public static let databaseTableName = "segment"
 
-    public enum Channel: String, Codable {
+    public enum Channel: String, Codable, Sendable {
         /// The user's microphone.
         case me
         /// Remote participants (system audio).

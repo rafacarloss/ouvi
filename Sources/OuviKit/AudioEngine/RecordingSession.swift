@@ -24,6 +24,16 @@ public final class RecordingSession {
 
     public var micLevel: Float { mic.currentLevel }
     public var systemLevel: Float { systemTap.currentLevel }
+
+    /// Live-transcription taps (set before `start()`); called on audio threads.
+    public var onMicBuffer: ((AVAudioPCMBuffer) -> Void)? {
+        get { mic.onBuffer }
+        set { mic.onBuffer = newValue }
+    }
+    public var onSystemBuffer: ((AVAudioPCMBuffer) -> Void)? {
+        get { systemTap.onBuffer }
+        set { systemTap.onBuffer = newValue }
+    }
     /// False after a while indicates a silently denied system-audio permission.
     public var systemSignalObserved: Bool { systemTap.observedSignal }
 

@@ -144,7 +144,7 @@ public final class VaultWriter {
         }
     }
 
-    static func slugify(_ text: String, allowSpaces: Bool = false) -> String {
+    public static func slugify(_ text: String, allowSpaces: Bool = false) -> String {
         let folded = text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .init(identifier: "pt_BR"))
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: allowSpaces ? " -" : "-"))
         var slug = ""

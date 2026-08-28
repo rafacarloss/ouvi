@@ -5,6 +5,7 @@ struct MainWindow: View {
     @EnvironmentObject var state: AppState
     @State private var searchText = ""
     @State private var searchResults: [TranscriptSegment] = []
+    @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "hasOnboarded")
 
     var body: some View {
         NavigationSplitView {
@@ -25,9 +26,31 @@ struct MainWindow: View {
                 : []
         }
         .toolbar {
+            ToolbarItem {
+                Button {
+                    importAudio()
+                } label: {
+                    Label("Importar áudio", systemImage: "square.and.arrow.down")
+                }
+                .disabled(state.importing)
+                .help("Transcrever um arquivo de áudio ou vídeo já gravado")
+            }
             ToolbarItem(placement: .primaryAction) {
                 RecordButton()
             }
+        }
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            for provider in providers {
+                _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                    if let url {
+                        Task { @MainActor in state.importAudioFiles([url]) }
+                    }
+                }
+            }
+            return true
+        }
+        .sheet(isPresented: $showOnboarding) {
+            OnboardingView()
         }
         .alert("Ops", isPresented: Binding(
             get: { state.lastError != nil },
@@ -41,6 +64,9 @@ struct MainWindow: View {
 
     @ViewBuilder
     private var sidebar: some View {
+        if searchText.isEmpty {
+            TodayMeetingsHeader()
+        }
         if !searchText.isEmpty && !searchResults.isEmpty {
             List(searchResults, id: \.id, selection: $state.selectedSessionID) { hit in
                 VStack(alignment: .leading, spacing: 2) {
@@ -62,6 +88,59 @@ struct MainWindow: View {
 
     private func sessionTitle(_ id: String) -> String {
         state.sessions.first(where: { $0.id == id })?.title ?? "Reunião"
+    }
+
+    private func importAudio() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = true
+        panel.allowedContentTypes = [.audio, .movie, .mpeg4Movie, .wav, .mp3]
+        panel.prompt = "Importar e transcrever"
+        if panel.runModal() == .OK {
+            state.importAudioFiles(panel.urls)
+        }
+    }
+}
+
+/// Today's calendar meetings, with one-click record for the one happening now.
+struct TodayMeetingsHeader: View {
+    @EnvironmentObject var state: AppState
+    @ObservedObject private var calendar: CalendarService
+
+    init() {
+        // ObservedObject needs the instance at init; environment isn't set yet.
+        _calendar = ObservedObject(wrappedValue: AppState.shared.calendar)
+    }
+
+    var body: some View {
+        if calendar.accessGranted && !calendar.todaysMeetings.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("HOJE")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                ForEach(calendar.todaysMeetings) { meeting in
+                    HStack(spacing: 6) {
+                        Text(meeting.start.formatted(date: .omitted, time: .shortened))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Text(meeting.title)
+                            .font(.caption)
+                            .lineLimit(1)
+                        Spacer()
+                        if meeting.isNow && !state.isRecording {
+                            Button("Gravar") {
+                                state.startRecording(title: meeting.title)
+                            }
+                            .font(.caption)
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.mini)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
     }
 }
 

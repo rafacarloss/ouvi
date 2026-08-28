@@ -15,6 +15,10 @@ public final class MicRecorder {
     public private(set) var currentLevel: Float = 0
     public private(set) var outputURL: URL?
 
+    /// Called on the audio thread with each captured (mono) buffer — used to
+    /// feed the live streaming transcriber. Keep the work minimal.
+    public var onBuffer: ((AVAudioPCMBuffer) -> Void)?
+
     public init() {}
 
     public var isRunning: Bool { engine.isRunning }
@@ -77,6 +81,7 @@ public final class MicRecorder {
             } catch {
                 self.log.error("mic write failed: \(error.localizedDescription)")
             }
+            self.onBuffer?(out)
         }
 
         engine.prepare()

@@ -87,16 +87,16 @@ struct SessionDetailView: View {
                 }
                 .disabled(busy != nil || segments.isEmpty || notes.isEmpty)
 
-                Button {
-                    run("Resumindo…") {
-                        let intelligence = MeetingIntelligence(database: state.database)
-                        summary = try await intelligence.summarize(sessionID: sessionID, userNotes: notes)
-                        persistNote()
-                        load()
+                Menu {
+                    ForEach(SummaryTemplate.all()) { template in
+                        Button(template.name) { summarize(with: template) }
                     }
                 } label: {
                     Label("Resumir", systemImage: "text.badge.star")
+                } primaryAction: {
+                    summarize(with: nil)
                 }
+                .fixedSize()
                 .disabled(busy != nil || segments.isEmpty)
 
                 Spacer()
@@ -124,6 +124,17 @@ struct SessionDetailView: View {
                 Text("Transcrição")
                     .font(.headline)
                 Spacer()
+                Menu {
+                    ForEach(ExportService.Format.allCases, id: \.rawValue) { format in
+                        Button(format.rawValue.uppercased()) { export(format) }
+                    }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .disabled(segments.isEmpty)
+                .help("Exportar transcrição")
                 if session?.state == .ready, session?.micAudioPath != nil {
                     Button {
                         togglePlayback()
@@ -137,6 +148,9 @@ struct SessionDetailView: View {
             .padding([.horizontal, .top])
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
+                    if isLiveSession {
+                        LiveTranscriptView()
+                    }
                     ForEach(segments) { segment in
                         SegmentView(
                             segment: segment,
@@ -144,7 +158,7 @@ struct SessionDetailView: View {
                             onRename: { beginRename(segment) },
                             onSeek: { seek(toMs: segment.startMs) })
                     }
-                    if segments.isEmpty {
+                    if segments.isEmpty && !isLiveSession {
                         Text(session?.state == .transcribing
                              ? "Transcrevendo…"
                              : "Sem transcrição ainda.")
@@ -160,6 +174,10 @@ struct SessionDetailView: View {
                 rename(speaker: speaker, to: newName, company: company)
             }
         }
+    }
+
+    private var isLiveSession: Bool {
+        state.recording?.session.id == sessionID
     }
 
     // MARK: Data
@@ -192,6 +210,16 @@ struct SessionDetailView: View {
         }
     }
 
+    private func summarize(with template: SummaryTemplate?) {
+        run("Resumindo…") {
+            let intelligence = MeetingIntelligence(database: state.database)
+            summary = try await intelligence.summarize(
+                sessionID: sessionID, userNotes: notes, template: template)
+            persistNote()
+            load()
+        }
+    }
+
     private func ask() {
         let question = chatQuestion
         run("Pensando…") {
@@ -204,6 +232,18 @@ struct SessionDetailView: View {
         let writer = VaultWriter(database: state.database)
         _ = try? writer.writeNote(sessionID: sessionID, userNotes: notes, enhancedNotes: enhanced)
         try? writer.writePersonPages()
+    }
+
+    private func export(_ format: ExportService.Format) {
+        guard let content = try? ExportService.export(
+            sessionID: sessionID, format: format, database: state.database)
+        else { return }
+        let panel = NSSavePanel()
+        let base = VaultWriter.slugify(session?.title ?? "reuniao")
+        panel.nameFieldStringValue = "\(base).\(format.rawValue)"
+        if panel.runModal() == .OK, let url = panel.url {
+            try? content.write(to: url, atomically: true, encoding: .utf8)
+        }
     }
 
     // MARK: Speakers
@@ -247,6 +287,37 @@ struct SessionDetailView: View {
         }
         player?.currentTime = Double(ms) / 1000
         player?.play()
+    }
+}
+
+/// Draft transcript streamed while the meeting is still being recorded.
+struct LiveTranscriptView: View {
+    @EnvironmentObject var state: AppState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Ao vivo (rascunho)", systemImage: "dot.radiowaves.left.and.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.red)
+            channelView(label: "Eles", text: state.liveThem)
+            channelView(label: "Eu", text: state.liveMe)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    @ViewBuilder
+    private func channelView(label: String, text: (confirmed: String, volatile: String)) -> some View {
+        if !text.confirmed.isEmpty || !text.volatile.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                (Text(text.confirmed) + Text(text.confirmed.isEmpty ? "" : " ") + Text(text.volatile).foregroundStyle(.tertiary))
+                    .font(.callout)
+            }
+        }
     }
 }
 

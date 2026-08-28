@@ -116,6 +116,20 @@ case "import":
     }
     semaphore.wait()
 
+case "export":
+    guard arguments.count >= 4, let format = ExportService.Format(rawValue: arguments[3]) else {
+        eprint("usage: ouvi-cli export <session-id> <md|srt|vtt|json>")
+        exit(64)
+    }
+    do {
+        let db = try OuviDatabase.openDefault()
+        print(try ExportService.export(sessionID: arguments[2], format: format, database: db))
+        exit(0)
+    } catch {
+        eprint("export failed: \(error)")
+        exit(1)
+    }
+
 case "reindex":
     let semaphore = DispatchSemaphore(value: 0)
     Task {

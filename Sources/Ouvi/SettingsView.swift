@@ -9,6 +9,8 @@ struct SettingsView: View {
                 .tabItem { Label("Geral", systemImage: "gear") }
             AISettings()
                 .tabItem { Label("Inteligência", systemImage: "sparkles") }
+            DictionarySettings()
+                .tabItem { Label("Dicionário", systemImage: "character.book.closed") }
             PermissionsSettings()
                 .tabItem { Label("Permissões", systemImage: "lock.shield") }
         }

@@ -50,16 +50,34 @@ public final class MeetingIntelligence {
 
     // MARK: Summarize
 
-    public func summarize(sessionID: String, userNotes: String?, preferCloud: Bool? = nil) async throws -> MeetingSummary {
+    public func summarize(
+        sessionID: String,
+        userNotes: String?,
+        template: SummaryTemplate? = nil,
+        preferCloud: Bool? = nil
+    ) async throws -> MeetingSummary {
         let transcript = try renderTranscript(sessionID: sessionID)
         guard !transcript.isEmpty else { throw LLMError.emptyResponse }
         let backend = LLMRouter.backend(preferCloud: preferCloud)
+
+        let templateInstruction: String
+        if let template, !template.sections.isEmpty {
+            templateInstruction = """
+            Structure "topics" using EXACTLY these section headings, in this order \
+            (skip a section only if the transcript has nothing for it): \
+            \(template.sections.map { "\"\($0)\"" }.joined(separator: ", ")). \
+            A section asking for quotes ("citações"/"verbatim") must contain literal quotes from the transcript.
+            """
+        } else {
+            templateInstruction = "Choose topic headings that fit the meeting."
+        }
 
         let system = """
         You are the summarization engine of Ouvi, a private meeting-notes app. \
         You produce faithful, concise meeting summaries in THE SAME LANGUAGE as the transcript \
         (if the meeting is in Brazilian Portuguese, answer in Brazilian Portuguese). \
         Never invent facts that are not in the transcript. \
+        \(templateInstruction) \
         Respond ONLY with a JSON object, no markdown fences, matching exactly this schema:
         {"title": string, "overview": string (2-3 sentences), \
         "topics": [{"heading": string, "bullets": [string]}], \
