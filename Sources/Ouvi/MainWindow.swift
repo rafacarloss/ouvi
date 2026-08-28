@@ -1,54 +1,43 @@
 import SwiftUI
 import OuviKit
+import GRDB
 
+/// The kit's MainWindow: nav sidebar (248) · session list (300) · content.
 struct MainWindow: View {
     @EnvironmentObject var state: AppState
-    @State private var searchText = ""
-    @State private var searchResults: [TranscriptSegment] = []
     @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "hasOnboarded")
 
     var body: some View {
-        NavigationSplitView {
-            sidebar
-                .background(DS.bgSidebar)
-                .navigationSplitViewColumnWidth(min: DS.sidebarWidth, ideal: DS.sidebarWidth)
-        } detail: {
-            if let id = state.selectedSessionID {
-                SessionDetailView(sessionID: id)
-                    .id(id)
-            } else {
-                EmptyStateView()
-            }
-        }
-        .searchable(text: $searchText, prompt: "Buscar nas reuniões")
-        .onChange(of: searchText) { _, query in
-            searchResults = query.count >= 2
-                ? ((try? state.database.searchSegments(matching: query, limit: 30)) ?? [])
-                : []
-        }
-        .toolbar {
-            ToolbarItem {
-                Button {
-                    importAudio()
-                } label: {
-                    Label("Importar áudio", systemImage: "square.and.arrow.down")
+        HStack(spacing: 0) {
+            NavSidebar()
+                .frame(width: DS.sidebarWidth)
+            Divider().overlay(DS.borderHairline)
+
+            switch state.nav {
+            case .today, .all:
+                SessionListColumn()
+                    .frame(width: 300)
+                Divider().overlay(DS.borderHairline)
+                if let id = state.selectedSessionID {
+                    SessionDetailView(sessionID: id)
+                        .id(id)
+                } else {
+                    EmptyStateView()
                 }
-                .disabled(state.importing)
-                .help("Transcrever um arquivo de áudio ou vídeo já gravado")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                RecordButton()
+            case .chat:
+                SearchChatView()
+            case .person(let speakerID):
+                PersonPageView(speakerID: speakerID)
+                    .id(speakerID)
             }
         }
-        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-            for provider in providers {
-                _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                    if let url {
-                        Task { @MainActor in state.importAudioFiles([url]) }
-                    }
-                }
+        .background(DS.bgWindow)
+        .onOpenCitation { ref, ms in state.openCitation(sessionRef: ref, ms: ms) }
+        .onReceive(state.audioPlayer.$playbackError) { error in
+            if let error {
+                state.lastError = error
+                state.audioPlayer.playbackError = nil
             }
-            return true
         }
         .sheet(isPresented: $showOnboarding) {
             OnboardingView()
@@ -61,34 +50,241 @@ struct MainWindow: View {
         } message: {
             Text(state.lastError ?? "")
         }
-    }
-
-    @ViewBuilder
-    private var sidebar: some View {
-        if searchText.isEmpty {
-            TodayMeetingsHeader()
-        }
-        if !searchText.isEmpty && !searchResults.isEmpty {
-            List(searchResults, id: \.id, selection: $state.selectedSessionID) { hit in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(sessionTitle(hit.sessionID))
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                    Text(hit.text)
-                        .lineLimit(2)
+        .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+            for provider in providers {
+                _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                    if let url {
+                        Task { @MainActor in state.importAudioFiles([url]) }
+                    }
                 }
-                .tag(hit.sessionID)
             }
-        } else {
-            List(state.sessions, selection: $state.selectedSessionID) { session in
-                SessionRow(session: session)
-                    .tag(session.id)
+            return true
+        }
+    }
+}
+
+// MARK: - Nav sidebar
+
+struct NavSidebar: View {
+    @EnvironmentObject var state: AppState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 5) {
+                Text("ouvi")
+                    .font(DS.sans(17, .black))
+                    .tracking(-0.5)
+                    .foregroundStyle(DS.textTitle)
+                Circle().fill(DS.live).frame(width: 5, height: 5).offset(y: 4)
             }
+            .padding(.horizontal, 8)
+            .padding(.top, 4)
+            .padding(.bottom, 10)
+
+            SidebarItem(icon: "calendar", label: "Hoje", count: todayCount, selected: state.nav == .today) {
+                state.nav = .today
+            }
+            SidebarItem(icon: "waveform", label: "Todas as reuniões", count: state.sessions.count, selected: state.nav == .all) {
+                state.nav = .all
+            }
+            SidebarItem(icon: "text.bubble", label: "Conversar com o histórico", count: nil, selected: state.nav == .chat) {
+                state.nav = .chat
+            }
+
+            if !state.people.isEmpty {
+                Text("PESSOAS")
+                    .font(DS.mono(10, .bold))
+                    .tracking(1.0)
+                    .foregroundStyle(DS.textFaint)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 14)
+                    .padding(.bottom, 4)
+                ForEach(state.people.prefix(8), id: \.speaker.id) { entry in
+                    if !entry.speaker.name.hasPrefix("Falante ") {
+                        SidebarItem(
+                            icon: "person",
+                            label: entry.speaker.name,
+                            count: entry.meetings,
+                            selected: state.nav == .person(entry.speaker.id),
+                            indent: true
+                        ) {
+                            state.nav = .person(entry.speaker.id)
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 8) {
+                PrivacyBadge(mode: .local, detail: "tudo neste Mac")
+                if let stats = state.stats {
+                    Text("~/Ouvi · \(stats.notes) notas · \(stats.people) pessoas")
+                        .font(DS.monoXS)
+                        .foregroundStyle(DS.textFaint)
+                }
+            }
+            .padding(8)
+        }
+        .padding(8)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(DS.bgSidebar)
+    }
+
+    private var todayCount: Int {
+        state.sessions.filter { Calendar.current.isDateInToday($0.startedAt) }.count
+            + state.calendar.todaysMeetings.count
+    }
+}
+
+struct SidebarItem: View {
+    let icon: String
+    let label: String
+    var count: Int?
+    var selected = false
+    var indent = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(.system(size: 12))
+                    .foregroundStyle(selected ? DS.accentSoftText : DS.textMuted)
+                    .frame(width: 16)
+                Text(label)
+                    .font(selected ? DS.bodyMedium : DS.body)
+                    .foregroundStyle(selected ? DS.textTitle : DS.textBody)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if let count {
+                    Text("\(count)")
+                        .font(DS.monoXS)
+                        .foregroundStyle(DS.textFaint)
+                }
+            }
+            .padding(.leading, indent ? 14 : 8)
+            .padding(.trailing, 8)
+            .padding(.vertical, 5)
+            .background(selected ? DS.bgSelected : .clear, in: RoundedRectangle(cornerRadius: DS.radiusControl))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Session list column
+
+struct SessionListColumn: View {
+    @EnvironmentObject var state: AppState
+    @State private var searchText = ""
+    @State private var searchResults: [TranscriptSegment] = []
+    @State private var renaming: Session?
+    @State private var deleting: Session?
+
+    private var listedSessions: [Session] {
+        state.nav == .today
+            ? state.sessions.filter { Calendar.current.isDateInToday($0.startedAt) }
+            : state.sessions
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11))
+                    .foregroundStyle(DS.textFaint)
+                TextField("Buscar em tudo", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(DS.body)
+                Button {
+                    importAudio()
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.system(size: 11))
+                        .foregroundStyle(DS.textMuted)
+                }
+                .buttonStyle(.plain)
+                .disabled(state.importing)
+                .help("Importar arquivo de áudio")
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(DS.bgInset, in: RoundedRectangle(cornerRadius: DS.radiusControl))
+            .padding(8)
+            Divider().overlay(DS.borderHairline)
+
+            if state.nav == .today {
+                TodayMeetingsHeader()
+            }
+
+            ScrollView {
+                LazyVStack(spacing: 1) {
+                    if !searchText.isEmpty {
+                        ForEach(searchResults, id: \.id) { hit in
+                            SearchHitRow(hit: hit)
+                        }
+                        if searchResults.isEmpty {
+                            Text("Nada encontrado para \"\(searchText)\".")
+                                .font(DS.caption)
+                                .foregroundStyle(DS.textFaint)
+                                .padding(12)
+                        }
+                    } else {
+                        ForEach(listedSessions) { session in
+                            SessionRow(session: session, selected: state.selectedSessionID == session.id)
+                                .onTapGesture { state.selectedSessionID = session.id }
+                                .contextMenu {
+                                    Button("Renomear…") { renaming = session }
+                                    Button("Exportar .md") { quickExport(session) }
+                                    Divider()
+                                    Button("Apagar reunião", role: .destructive) { deleting = session }
+                                }
+                        }
+                    }
+                }
+                .padding(6)
+            }
+        }
+        .background(DS.bgWindow)
+        .onChange(of: searchText) { _, query in
+            searchResults = query.count >= 2
+                ? ((try? state.database.searchSegments(matching: query, limit: 30)) ?? [])
+                : []
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                RecordButton()
+            }
+        }
+        .sheet(item: $renaming) { session in
+            RenameSessionSheet(session: session) { title in
+                state.renameSession(session, to: title)
+            }
+        }
+        .confirmationDialog(
+            "Apagar \"\(deleting?.title ?? "")\"?",
+            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } })
+        ) {
+            Button("Apagar reunião", role: .destructive) {
+                if let session = deleting { state.deleteSession(session) }
+                deleting = nil
+            }
+            Button("Cancelar", role: .cancel) { deleting = nil }
+        } message: {
+            Text("A nota no vault e o áudio ficam no disco; a reunião some do app.")
         }
     }
 
-    private func sessionTitle(_ id: String) -> String {
-        state.sessions.first(where: { $0.id == id })?.title ?? "Reunião"
+    private func quickExport(_ session: Session) {
+        guard let content = try? ExportService.export(
+            sessionID: session.id, format: .markdown, database: state.database)
+        else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "\(VaultWriter.slugify(session.title)).md"
+        if panel.runModal() == .OK, let url = panel.url {
+            try? content.write(to: url, atomically: true, encoding: .utf8)
+        }
     }
 
     private func importAudio() {
@@ -103,52 +299,39 @@ struct MainWindow: View {
     }
 }
 
-/// Today's calendar meetings, with one-click record for the one happening now.
-struct TodayMeetingsHeader: View {
+struct SearchHitRow: View {
     @EnvironmentObject var state: AppState
-    @ObservedObject private var calendar: CalendarService
-
-    init() {
-        // ObservedObject needs the instance at init; environment isn't set yet.
-        _calendar = ObservedObject(wrappedValue: AppState.shared.calendar)
-    }
+    let hit: TranscriptSegment
 
     var body: some View {
-        if calendar.accessGranted && !calendar.todaysMeetings.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("HOJE")
-                    .font(DS.mono(10, .bold))
-                    .tracking(1.0)
-                    .foregroundStyle(DS.textFaint)
-                ForEach(calendar.todaysMeetings) { meeting in
-                    HStack(spacing: 6) {
-                        Text(meeting.start.formatted(date: .omitted, time: .shortened))
-                            .font(DS.monoXS)
-                            .foregroundStyle(DS.textFaint)
-                        Text(meeting.title)
-                            .font(DS.caption)
-                            .foregroundStyle(DS.textBody)
-                            .lineLimit(1)
-                        Spacer()
-                        if meeting.isNow && !state.isRecording {
-                            Button("Gravar") {
-                                state.startRecording(title: meeting.title)
-                            }
-                            .font(.caption)
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.mini)
-                        }
-                    }
+        Button {
+            state.selectedSessionID = hit.sessionID
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(state.sessions.first { $0.id == hit.sessionID }?.title ?? "Reunião")
+                        .font(DS.sans(11, .medium))
+                        .foregroundStyle(DS.textMuted)
+                        .lineLimit(1)
+                    TimeCode(ms: hit.startMs)
                 }
+                Text(hit.text)
+                    .font(DS.caption)
+                    .foregroundStyle(DS.textBody)
+                    .lineLimit(2)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 }
 
 struct SessionRow: View {
+    @EnvironmentObject var state: AppState
     let session: Session
+    var selected = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
@@ -160,19 +343,25 @@ struct SessionRow: View {
                 Spacer()
                 stateBadge
             }
-            HStack(spacing: 4) {
-                Text(Self.relativeDate(session.startedAt))
-                    .font(DS.monoXS)
-                    .foregroundStyle(DS.textFaint)
-                if let ended = session.endedAt {
-                    Text("·").foregroundStyle(DS.textFaint)
-                    Text("\(max(1, Int(ended.timeIntervalSince(session.startedAt) / 60))) min")
-                        .font(DS.monoXS)
-                        .foregroundStyle(DS.textFaint)
-                }
-            }
+            Text(metaLine)
+                .font(DS.monoXS)
+                .foregroundStyle(DS.textFaint)
         }
-        .padding(.vertical, 5)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 7)
+        .background(selected ? DS.bgSelected : .clear, in: RoundedRectangle(cornerRadius: DS.radiusControl))
+        .contentShape(Rectangle())
+    }
+
+    private var metaLine: String {
+        var parts = [Self.relativeDate(session.startedAt)]
+        if let ended = session.endedAt {
+            parts.append("\(max(1, Int(ended.timeIntervalSince(session.startedAt) / 60))) min")
+        }
+        if let count = try? state.database.speakerCount(sessionID: session.id), count > 1 {
+            parts.append("\(count) falantes")
+        }
+        return parts.joined(separator: " · ")
     }
 
     static func relativeDate(_ date: Date) -> String {
@@ -200,10 +389,83 @@ struct SessionRow: View {
             if session.usedCloud {
                 MicroBadge(text: "NUVEM", color: DS.caution, background: DS.cautionSoft)
                     .help("Nuvem usada nesta reunião — apenas o texto do transcript foi enviado.")
-            } else {
-                MicroBadge(text: "LOCAL")
-                    .help("Tudo neste Mac")
             }
+        }
+    }
+}
+
+struct RenameSessionSheet: View {
+    let session: Session
+    let onSave: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var title = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Renomear reunião")
+                .font(DS.title3)
+            TextField("Título", text: $title)
+                .onSubmit { save() }
+            HStack {
+                Spacer()
+                Button("Cancelar") { dismiss() }
+                Button("Salvar") { save() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 380)
+        .onAppear { title = session.title }
+    }
+
+    private func save() {
+        onSave(title)
+        dismiss()
+    }
+}
+
+/// Today's calendar meetings, with one-click record for the one happening now.
+struct TodayMeetingsHeader: View {
+    @EnvironmentObject var state: AppState
+    @ObservedObject private var calendar: CalendarService
+
+    init() {
+        _calendar = ObservedObject(wrappedValue: AppState.shared.calendar)
+    }
+
+    var body: some View {
+        if calendar.accessGranted && !calendar.todaysMeetings.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("AGENDA")
+                    .font(DS.mono(10, .bold))
+                    .tracking(1.0)
+                    .foregroundStyle(DS.textFaint)
+                ForEach(calendar.todaysMeetings) { meeting in
+                    HStack(spacing: 6) {
+                        Text(meeting.start.formatted(date: .omitted, time: .shortened))
+                            .font(DS.monoXS)
+                            .foregroundStyle(DS.textFaint)
+                        Text(meeting.title)
+                            .font(DS.caption)
+                            .foregroundStyle(DS.textBody)
+                            .lineLimit(1)
+                        Spacer()
+                        if meeting.isNow && !state.isRecording {
+                            Button("Gravar") {
+                                state.startRecording(title: meeting.title)
+                            }
+                            .font(DS.caption)
+                            .buttonStyle(.borderedProminent)
+                            .controlSize(.mini)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Divider().overlay(DS.borderHairline)
         }
     }
 }
@@ -288,14 +550,13 @@ struct EmptyStateView: View {
                 .font(DS.body)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(DS.textMuted)
-            Button("Gravar agora") { state.startRecording() }
-                .keyboardShortcut("r", modifiers: [.command])
+            PrimaryButton(title: "Gravar agora", icon: "circle.fill") { state.startRecording() }
             Text("Segure fn para ditar em qualquer app")
                 .font(DS.monoXS)
                 .foregroundStyle(DS.textFaint)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(DS.bgWindow)
+        .background(DS.bgSurface)
     }
 }

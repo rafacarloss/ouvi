@@ -120,6 +120,35 @@ public final class MeetingIntelligence {
         }
     }
 
+    // MARK: Auto-title (best-effort, right after processing)
+
+    /// Generates a short title from the transcript when the session still has a
+    /// placeholder name. Silently does nothing if no LLM is reachable.
+    public func autoTitleIfNeeded(sessionID: String) async {
+        guard let session = try? database.session(id: sessionID),
+              session.title.hasPrefix("Reunião ") || session.title.hasPrefix("Meeting ")
+        else { return }
+        guard let transcript = try? renderTranscript(sessionID: sessionID), !transcript.isEmpty else { return }
+        let backend = LLMRouter.backend()
+        do {
+            let title = try await backend.complete(
+                system: "Give this meeting a short, specific title (3-6 words) in the transcript's language. Answer with the title only — no quotes, no punctuation at the end.",
+                messages: [LLMMessage(role: "user", content: String(transcript.prefix(6000)))],
+                maxTokens: 64)
+            let cleaned = title.trimmingCharacters(in: .whitespacesAndNewlines)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "\"“”."))
+            guard !cleaned.isEmpty, cleaned.count < 90 else { return }
+            try await database.pool.write { db in
+                guard var stored = try Session.fetchOne(db, key: sessionID) else { return }
+                stored.title = cleaned
+                if backend.isCloud { stored.usedCloud = true }
+                try stored.update(db)
+            }
+        } catch {
+            // No LLM configured — keep the placeholder title.
+        }
+    }
+
     // MARK: Enhance notes (the Granola flow)
 
     /// Merges the user's rough bullets with transcript context. The user's own
@@ -176,8 +205,10 @@ public final class MeetingIntelligence {
     }
 
     /// Hybrid retrieval for cross-meeting chat: FTS5 always; vector search when
-    /// a local embedding endpoint is available.
-    func crossMeetingContext(for question: String, limit: Int = 24) throws -> String {
+    /// a local embedding endpoint is available. Citation markers use the first
+    /// 8 chars of the session id — ((a1b2c3d4:mm:ss)) — so the UI can resolve
+    /// a chip click back to the exact meeting and moment.
+    public func crossMeetingContext(for question: String, limit: Int = 24) throws -> String {
         var pieces: [String] = []
         let hits = try database.searchSegments(matching: question, limit: limit)
         let sessions = try database.pool.read { db in
@@ -186,14 +217,20 @@ public final class MeetingIntelligence {
         let titles = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0.title) })
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        let dates = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, dateFormatter.string(from: $0.startedAt)) })
         for hit in hits {
             let t = String(format: "%02d:%02d", hit.startMs / 60000, (hit.startMs / 1000) % 60)
+            let session = sessions.first { $0.id == hit.sessionID }
+            let shortID = String(hit.sessionID.prefix(8)).lowercased()
             let title = titles[hit.sessionID] ?? "?"
-            let date = dates[hit.sessionID] ?? "?"
-            pieces.append("((\(title) — \(date):\(t))) \(hit.text)")
+            let date = session.map { dateFormatter.string(from: $0.startedAt) } ?? "?"
+            pieces.append("[\(title) — \(date)] ((\(shortID):\(t))) \(hit.text)")
         }
         return pieces.joined(separator: "\n")
+    }
+
+    /// Segments retrieved for a question — shown in the UI as "trechos usados".
+    public func retrievedSegments(for question: String, limit: Int = 8) throws -> [TranscriptSegment] {
+        try database.searchSegments(matching: question, limit: limit)
     }
 
     private func markCloudUsed(sessionID: String) async throws {

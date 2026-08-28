@@ -32,6 +32,8 @@ public struct Session: Codable, Identifiable, Equatable, FetchableRecord, Persis
     public var notePath: String?
     public var language: String?
     public var summaryJSON: String?
+    public var userNotes: String?
+    public var enhancedNotes: String?
     /// True when a cloud LLM was used for any processing of this session.
     public var usedCloud: Bool
     public var createdAt: Date
@@ -50,6 +52,8 @@ public struct Session: Codable, Identifiable, Equatable, FetchableRecord, Persis
         notePath: String? = nil,
         language: String? = nil,
         summaryJSON: String? = nil,
+        userNotes: String? = nil,
+        enhancedNotes: String? = nil,
         usedCloud: Bool = false,
         createdAt: Date = Date(),
         deletedAt: Date? = nil
@@ -66,6 +70,8 @@ public struct Session: Codable, Identifiable, Equatable, FetchableRecord, Persis
         self.notePath = notePath
         self.language = language
         self.summaryJSON = summaryJSON
+        self.userNotes = userNotes
+        self.enhancedNotes = enhancedNotes
         self.usedCloud = usedCloud
         self.createdAt = createdAt
         self.deletedAt = deletedAt

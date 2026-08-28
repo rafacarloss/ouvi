@@ -15,8 +15,19 @@ final class AppState: ObservableObject {
     let meetingDetector = MeetingDetector()
     let calendar = CalendarService()
 
+    enum Nav: Hashable {
+        case today
+        case all
+        case chat
+        case person(String)
+    }
+
+    @Published var nav: Nav = .all
     @Published var sessions: [Session] = []
+    @Published var people: [(speaker: Speaker, meetings: Int)] = []
+    @Published var stats: OuviDatabase.VaultStats?
     @Published var selectedSessionID: String?
+    let audioPlayer = AudioPlayerController()
     @Published var recording: RecordingSession?
     @Published var recordingElapsed: TimeInterval = 0
     @Published var micLevel: Float = 0
@@ -59,6 +70,25 @@ final class AppState: ObservableObject {
 
     func refreshSessions() {
         sessions = (try? database.recentSessions(limit: 300)) ?? []
+        people = (try? database.peopleWithCounts()) ?? []
+        stats = try? database.vaultStats()
+    }
+
+    /// Resolves a citation chip: seeks in the current session, or navigates to
+    /// the referenced meeting (cross-meeting short-id markers) and seeks there.
+    func openCitation(sessionRef: String?, ms: Int) {
+        let target: Session?
+        if let ref = sessionRef, !ref.isEmpty {
+            target = sessions.first { $0.id.lowercased().hasPrefix(ref.lowercased()) }
+        } else if let id = selectedSessionID {
+            target = sessions.first { $0.id == id }
+        } else {
+            target = nil
+        }
+        guard let target else { return }
+        selectedSessionID = target.id
+        if case .chat = nav {} else { nav = .all }
+        audioPlayer.play(session: target, atMs: ms)
     }
 
     // MARK: Recording
@@ -150,7 +180,9 @@ final class AppState: ObservableObject {
                     ) { progress in
                         Task { @MainActor in self.processingStage = progress.stage }
                     }
-                    // Project into the vault right away — files over app.
+                    // Best-effort auto-title, then project into the vault.
+                    await MeetingIntelligence(database: self.database)
+                        .autoTitleIfNeeded(sessionID: session.session.id)
                     let writer = VaultWriter(database: self.database)
                     _ = try? writer.writeNote(sessionID: session.session.id, userNotes: self.notesDrafts[session.session.id], enhancedNotes: nil)
                     try? writer.writePersonPages()
@@ -192,9 +224,43 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK: Notes (in-meeting notepad drafts, keyed by session)
+    // MARK: Notes (in-meeting notepad drafts, keyed by session; persisted to DB)
 
     @Published var notesDrafts: [String: String] = [:]
+
+    func saveNotes(sessionID: String, userNotes: String?, enhancedNotes: String?) {
+        try? database.pool.write { db in
+            guard var session = try Session.fetchOne(db, key: sessionID) else { return }
+            if let userNotes { session.userNotes = userNotes }
+            if let enhancedNotes { session.enhancedNotes = enhancedNotes }
+            try session.update(db)
+        }
+    }
+
+    // MARK: Session management
+
+    func deleteSession(_ session: Session) {
+        try? database.pool.write { db in
+            var s = session
+            s.deletedAt = Date()
+            try s.update(db)
+        }
+        if selectedSessionID == session.id { selectedSessionID = nil }
+        refreshSessions()
+    }
+
+    func renameSession(_ session: Session, to title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        try? database.pool.write { db in
+            var s = session
+            s.title = trimmed
+            try s.update(db)
+        }
+        refreshSessions()
+        let writer = VaultWriter(database: database)
+        _ = try? writer.writeNote(sessionID: session.id, userNotes: session.userNotes, enhancedNotes: session.enhancedNotes)
+    }
 
     // MARK: Meeting-detected notification
 

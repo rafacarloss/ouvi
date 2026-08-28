@@ -104,6 +104,13 @@ public final class OuviDatabase: Sendable {
                 """)
         }
 
+        migrator.registerMigration("v2-notes") { db in
+            try db.alter(table: "session") { t in
+                t.add(column: "userNotes", .text)
+                t.add(column: "enhancedNotes", .text)
+            }
+        }
+
         return migrator
     }
 }
@@ -158,6 +165,66 @@ extension OuviDatabase {
                     LIMIT ?
                     """,
                 arguments: [pattern, limit])
+        }
+    }
+
+    /// Named speakers with how many distinct meetings each appears in, most first.
+    public func peopleWithCounts() throws -> [(speaker: Speaker, meetings: Int)] {
+        try pool.read { db in
+            let speakers = try Speaker.fetchAll(db)
+            return try speakers.compactMap { speaker in
+                let count = try Int.fetchOne(
+                    db,
+                    sql: "SELECT COUNT(DISTINCT session_id) FROM segment WHERE speaker_id = ?",
+                    arguments: [speaker.id]) ?? 0
+                return count > 0 ? (speaker, count) : nil
+            }
+            .sorted { $0.1 > $1.1 }
+        }
+    }
+
+    /// Distinct voices in a session (named or not), including the user.
+    public func speakerCount(sessionID: String) throws -> Int {
+        try pool.read { db in
+            let them = try Int.fetchOne(
+                db,
+                sql: "SELECT COUNT(DISTINCT COALESCE(speaker_id, 'x')) FROM segment WHERE session_id = ? AND channel = 'them'",
+                arguments: [sessionID]) ?? 0
+            let me = try Int.fetchOne(
+                db,
+                sql: "SELECT COUNT(*) FROM segment WHERE session_id = ? AND channel = 'me' LIMIT 1",
+                arguments: [sessionID]) ?? 0
+            return them + (me > 0 ? 1 : 0)
+        }
+    }
+
+    /// Sessions a given speaker appears in, newest first.
+    public func sessions(withSpeaker speakerID: String) throws -> [Session] {
+        try pool.read { db in
+            try Session.fetchAll(
+                db,
+                sql: """
+                    SELECT DISTINCT session.* FROM session
+                    JOIN segment ON segment.session_id = session.id
+                    WHERE segment.speaker_id = ? AND session.deletedAt IS NULL
+                    ORDER BY session.startedAt DESC
+                    """,
+                arguments: [speakerID])
+        }
+    }
+
+    public struct VaultStats {
+        public let notes: Int
+        public let people: Int
+    }
+
+    public func vaultStats() throws -> VaultStats {
+        try pool.read { db in
+            let notes = try Int.fetchOne(
+                db, sql: "SELECT COUNT(*) FROM session WHERE deletedAt IS NULL AND state = 'ready'") ?? 0
+            let people = try Int.fetchOne(
+                db, sql: "SELECT COUNT(*) FROM speaker WHERE name NOT LIKE 'Falante %'") ?? 0
+            return VaultStats(notes: notes, people: people)
         }
     }
 
