@@ -13,6 +13,7 @@ let package = Package(
     products: [
         .executable(name: "Ouvi", targets: ["Ouvi"]),
         .executable(name: "ouvi-mcp", targets: ["OuviMCP"]),
+        .executable(name: "ouvi-cli", targets: ["OuviCLI"]),
         .library(name: "OuviKit", targets: ["OuviKit"]),
     ],
     dependencies: [
@@ -49,6 +50,11 @@ let package = Package(
         ),
         .executableTarget(
             name: "OuviMCP",
+            dependencies: ["OuviKit"],
+            swiftSettings: swiftSettings
+        ),
+        .executableTarget(
+            name: "OuviCLI",
             dependencies: ["OuviKit"],
             swiftSettings: swiftSettings
         ),
