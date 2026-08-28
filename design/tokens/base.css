@@ -1,0 +1,28 @@
+/* Minimal resets only — the design system does not ship layout classes. */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-window);
+  color: var(--text-body);
+  font: var(--type-body);
+  letter-spacing: var(--tracking-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--selection-bg); }
+
+a { color: var(--text-link); text-decoration: none; }
+a:hover { color: var(--text-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+
+button, input, select, textarea { font: inherit; letter-spacing: inherit; color: inherit; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+code, kbd, samp, pre { font-family: var(--font-mono); }
+h1, h2, h3, h4, p { margin: 0; text-wrap: pretty; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

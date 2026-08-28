@@ -1,0 +1,143 @@
+/* ── Ouvi color system ────────────────────────────────────────────────
+   Two themes with equal weight. Light = "paper": warm-neutral, quiet.
+   Dark = "graphite": cool-neutral, near-black, no pure black.
+   Signal green (#2E9E6B) means one thing: Ouvi is listening / is local.
+   ──────────────────────────────────────────────────────────────────── */
+:root {
+  /* base ramp — neutrals (light) */
+  --paper-0: #fbfbf9;   /* window backdrop */
+  --paper-1: #ffffff;   /* raised surface, cards, editor */
+  --paper-2: #f4f4f1;   /* sidebar, rails, inset fields */
+  --paper-3: #eaeae6;   /* hover on inset, track */
+  --paper-4: #dedbd5;   /* pressed, strong divider */
+
+  --ink-1: #16181a;     /* primary text */
+  --ink-2: #55595e;     /* secondary text */
+  --ink-3: #8b9096;     /* tertiary, placeholders, draft transcript */
+  --ink-inv: #fbfbf9;   /* text on filled accent */
+
+  --line-1: rgba(18, 20, 22, 0.09);
+  --line-2: rgba(18, 20, 22, 0.16);
+
+  /* signal green */
+  --green-100: #e4f4ec;
+  --green-200: #c2e6d4;
+  --green-300: #8ed3b1;
+  --green-500: #2e9e6b;
+  --green-600: #237f56;
+  --green-700: #1a6244;
+  --green-950: #0d2a1e;
+
+  /* status — used sparingly */
+  --red-100:  #fbe9e5;
+  --red-500:  #c4462f;
+  --red-600:  #a53722;
+  --amber-100:#fbf1dd;
+  --amber-500:#b7791f;
+  --amber-600:#8f5d13;
+  --blue-100: #e6ecfa;
+  --blue-500: #3b6fd4;
+
+  /* ── semantic aliases (use these, not the ramp) ── */
+  --bg-window: var(--paper-0);
+  --bg-sidebar: var(--paper-2);
+  --bg-surface: var(--paper-1);
+  --bg-inset: var(--paper-2);
+  --bg-hover: rgba(18, 20, 22, 0.045);
+  --bg-active: rgba(18, 20, 22, 0.08);
+  --bg-selected: var(--green-100);
+  --bg-scrim: rgba(18, 20, 22, 0.28);
+
+  --text-title: var(--ink-1);
+  --text-body: var(--ink-1);
+  --text-muted: var(--ink-2);
+  --text-faint: var(--ink-3);
+  --text-draft: var(--ink-3);
+  --text-on-accent: #ffffff;
+  --text-link: var(--green-600);
+  --text-link-hover: var(--green-700);
+
+  --border-hairline: var(--line-1);
+  --border-strong: var(--line-2);
+  --border-focus: var(--green-500);
+
+  --accent: var(--green-500);
+  --accent-hover: var(--green-600);
+  --accent-press: var(--green-700);
+  --accent-soft: var(--green-100);
+  --accent-soft-text: var(--green-700);
+
+  --live: var(--green-500);          /* recording / listening */
+  --live-glow: rgba(46, 158, 107, 0.28);
+  --danger: var(--red-500);
+  --danger-soft: var(--red-100);
+  --caution: var(--amber-500);       /* "cloud was used here" */
+  --caution-soft: var(--amber-100);
+  --info: var(--blue-500);
+  --info-soft: var(--blue-100);
+
+  --speaker-me: var(--green-600);
+  --speaker-a: #3b6fd4;
+  --speaker-b: #8f5d13;
+  --speaker-c: #7a4bbd;
+  --speaker-d: #1f7f85;
+
+  --focus-ring: 0 0 0 3px rgba(46, 158, 107, 0.32);
+  --selection-bg: rgba(46, 158, 107, 0.22);
+}
+
+[data-theme="dark"] {
+  --paper-0: #121315;
+  --paper-1: #1a1c1f;
+  --paper-2: #16181a;
+  --paper-3: #23262a;
+  --paper-4: #2e3237;
+
+  --ink-1: #f1f2f2;
+  --ink-2: #a6acb2;
+  --ink-3: #71777d;
+  --ink-inv: #0d0e10;
+
+  --line-1: rgba(255, 255, 255, 0.09);
+  --line-2: rgba(255, 255, 255, 0.16);
+
+  --green-100: #12281f;
+  --green-200: #17392b;
+  --green-300: #2c6a4c;
+  --green-500: #3fb87f;
+  --green-600: #58c894;
+  --green-700: #8fdcb5;
+  --green-950: #0b1f16;
+
+  --red-100:  #2c1512;
+  --red-500:  #e0664c;
+  --red-600:  #ef8067;
+  --amber-100:#2a1f0d;
+  --amber-500:#d69b3c;
+  --amber-600:#e6b25c;
+  --blue-100: #14203a;
+  --blue-500: #6c95e6;
+
+  --bg-hover: rgba(255, 255, 255, 0.055);
+  --bg-active: rgba(255, 255, 255, 0.1);
+  --bg-selected: var(--green-100);
+  --bg-scrim: rgba(0, 0, 0, 0.5);
+
+  --text-on-accent: #08130d;
+  --text-link: var(--green-600);
+  --text-link-hover: var(--green-700);
+
+  --accent-hover: var(--green-600);
+  --accent-press: var(--green-300);
+  --accent-soft-text: var(--green-700);
+
+  --live-glow: rgba(63, 184, 127, 0.35);
+  --speaker-me: var(--green-600);
+  --speaker-a: #6c95e6;
+  --speaker-b: #d69b3c;
+  --speaker-c: #a98ae0;
+  --speaker-d: #4fb3ba;
+
+  --focus-ring: 0 0 0 3px rgba(63, 184, 127, 0.35);
+  --selection-bg: rgba(63, 184, 127, 0.26);
+}

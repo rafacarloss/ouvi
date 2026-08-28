@@ -1,0 +1,30 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Semantic aliases" subtitle="Consume these, never the ramp" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .row { display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: var(--space-2); }
+  .chip { width: 84px; height: 44px; border-radius: var(--radius-md); box-shadow: inset 0 0 0 0.5px var(--border-hairline); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-muted); letter-spacing: var(--tracking-mono); }
+  .lbl b { color: var(--text-body); font-weight: 400; display: block; }
+  .tag { font: var(--type-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-faint); }
+
+</style>
+</head>
+<body>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+  <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-window);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--bg-window</span></div><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-surface);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--bg-surface</span></div><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-sidebar);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--bg-sidebar</span></div><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-inset);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--bg-inset</span></div><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-hover);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--bg-hover</span></div><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-selected);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--bg-selected</span></div><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--accent-soft);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--accent-soft</span></div><div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-scrim);box-shadow:inset 0 0 0 0.5px var(--border-strong)"></div><span class="lbl">--bg-scrim</span></div>
+</div>
+<div style="margin-top:14px;display:flex;gap:20px">
+  <span style="color:var(--text-title);font:var(--type-ui-medium)">--text-title</span>
+  <span style="color:var(--text-muted);font:var(--type-ui)">--text-muted</span>
+  <span style="color:var(--text-faint);font:var(--type-ui)">--text-faint</span>
+  <span style="color:var(--text-draft);font:var(--type-ui)">--text-draft</span>
+  <span style="color:var(--text-link);font:var(--type-ui)">--text-link</span>
+</div>
+</body>
+</html>

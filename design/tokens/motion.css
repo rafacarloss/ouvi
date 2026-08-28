@@ -1,0 +1,36 @@
+/* Ouvi motion is short and mechanical. Nothing bounces. Nothing bumps.
+   The only continuous animation in the product is the live waveform. */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-snap: cubic-bezier(0.32, 0.9, 0.28, 1);
+
+  --dur-instant: 70ms;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --dur-hud: 220ms;
+
+  --transition-control: background-color var(--dur-fast) var(--ease-out),
+                        border-color var(--dur-fast) var(--ease-out),
+                        color var(--dur-fast) var(--ease-out),
+                        box-shadow var(--dur-fast) var(--ease-out);
+  --transition-surface: opacity var(--dur-base) var(--ease-out),
+                        transform var(--dur-base) var(--ease-out);
+}
+
+@keyframes ouvi-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+@keyframes ouvi-bar {
+  0%, 100% { transform: scaleY(0.32); }
+  50% { transform: scaleY(1); }
+}
+@keyframes ouvi-fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ouvi-spin {
+  to { transform: rotate(360deg); }
+}

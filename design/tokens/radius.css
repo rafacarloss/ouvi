@@ -1,0 +1,14 @@
+/* macOS-continuous feel: small radii on controls, 10–12 on panels. */
+:root {
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
+  --radius-pill: 999px;
+  --radius-window: 12px;
+  --radius-control: var(--radius-sm);
+  --radius-card: var(--radius-lg);
+  --radius-sheet: var(--radius-xl);
+}

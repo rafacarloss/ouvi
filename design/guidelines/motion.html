@@ -1,0 +1,32 @@
+<!-- @dsCard group="Motion" viewport="700x160" name="Motion — short and mechanical" subtitle="120/180/220ms, ease-out; nothing bounces; waveform is the only loop" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .row { display: flex; align-items: flex-end; gap: var(--space-4); flex-wrap: wrap; }
+  .sw { display: flex; flex-direction: column; gap: var(--space-2); }
+  .chip { width: 84px; height: 44px; border-radius: var(--radius-md); box-shadow: inset 0 0 0 0.5px var(--border-hairline); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-muted); letter-spacing: var(--tracking-mono); }
+  .lbl b { color: var(--text-body); font-weight: 400; display: block; }
+  .tag { font: var(--type-micro); text-transform: uppercase; letter-spacing: var(--tracking-label); color: var(--text-faint); }
+
+</style>
+</head>
+<body>
+<div style="display:flex;gap:32px;align-items:center">
+  <div>
+    <div style="display:flex;align-items:flex-end;gap:3px;height:34px">
+      <div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 0.6s var(--ease-in-out) infinite;animation-delay:0s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 1.2999999999999998s var(--ease-in-out) infinite;animation-delay:0.06s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 1.1s var(--ease-in-out) infinite;animation-delay:0.12s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 0.8999999999999999s var(--ease-in-out) infinite;animation-delay:0.18s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 0.7s var(--ease-in-out) infinite;animation-delay:0.24s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 1.4s var(--ease-in-out) infinite;animation-delay:0.3s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 1.2s var(--ease-in-out) infinite;animation-delay:0.36s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 1s var(--ease-in-out) infinite;animation-delay:0.42s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 0.8s var(--ease-in-out) infinite;animation-delay:0.48s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 0.6s var(--ease-in-out) infinite;animation-delay:0.54s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 1.2999999999999998s var(--ease-in-out) infinite;animation-delay:0.6s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 1.1s var(--ease-in-out) infinite;animation-delay:0.6599999999999999s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 0.8999999999999999s var(--ease-in-out) infinite;animation-delay:0.72s"></div><div style="width:3px;height:100%;border-radius:2px;background:var(--live);transform-origin:bottom;animation:ouvi-bar 0.7s var(--ease-in-out) infinite;animation-delay:0.78s"></div>
+    </div>
+    <div class="lbl" style="margin-top:8px">waveform · real amplitude only</div>
+  </div>
+  <div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:var(--live);box-shadow:var(--glow-live);animation:ouvi-pulse 1.2s var(--ease-in-out) infinite"></span><span style="font:var(--type-ui)">live dot · 1.2s pulse</span></div>
+    <div class="lbl" style="margin-top:10px">--dur-fast 120ms controls<br>--dur-base 180ms surfaces<br>--dur-hud 220ms pill<br>--ease-out cubic-bezier(.2,.7,.3,1)</div>
+  </div>
+</div>
+</body>
+</html>

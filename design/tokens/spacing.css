@@ -1,0 +1,33 @@
+/* 4px grid. macOS chrome lives on 8/12/16; reading columns on 20/24/32. */
+:root {
+  --space-0: 0px;
+  --space-05: 2px;
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 20px;
+  --space-7: 24px;
+  --space-8: 32px;
+  --space-9: 40px;
+  --space-10: 56px;
+  --space-11: 72px;
+  --space-12: 96px;
+  --space-13: 128px;
+
+  /* layout constants */
+  --sidebar-width: 248px;
+  --transcript-width: 340px;
+  --titlebar-height: 38px;
+  --toolbar-height: 44px;
+  --row-height: 30px;
+  --row-height-lg: 56px;
+  --control-height-sm: 22px;
+  --control-height: 28px;
+  --control-height-lg: 34px;
+  --hit-target: 28px;          /* desktop pointer minimum */
+  --reading-measure: 68ch;
+  --page-gutter: var(--space-7);
+  --site-max: 1120px;
+}

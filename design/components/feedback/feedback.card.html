@@ -1,0 +1,66 @@
+<!-- @dsCard group="Components" viewport="700x260" name="Feedback — toast, tooltip, progress, empty" subtitle="One sentence each; mono details for anything measured" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .grp { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: var(--space-4); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-faint); letter-spacing: var(--tracking-mono); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+function pick(names) {
+  for (const k of Object.getOwnPropertyNames(window)) {
+    try {
+      const v = window[k];
+      if (v && typeof v === "object" && !(v instanceof Window) && names.every(n => typeof v[n] === "function")) return v;
+    } catch (e) { /* cross-origin or throwing getter */ }
+  }
+  return {};
+}
+const { Toast, Tooltip, ProgressBar, EmptyState } = pick(["Toast","Tooltip","ProgressBar","EmptyState"]);
+const { Button, Badge } = pick(["Button","Badge"]);
+
+function Demo() {
+  return (
+    <div className="col">
+      <div className="grp">
+        <Toast tone="success" action={<Button variant="ghost" size="sm">Abrir</Button>}>Nota salva em ~/Ouvi/2026/08</Toast>
+        <Toast tone="cloud" onDismiss={() => {}}>Resumo gerado pela Claude API</Toast>
+      </div>
+      <div className="grp" style={{ gap: "var(--space-8)" }}>
+        <Tooltip label="Tudo neste Mac"><Badge tone="local">local</Badge></Tooltip>
+        <Tooltip label="Nuvem usada nesta reunião" side="right"><Badge tone="cloud">nuvem</Badge></Tooltip>
+        <span className="lbl">hover nos badges</span>
+      </div>
+      <div style={{ width: 320 }}>
+        <ProgressBar value={62} label="Baixando parakeet-tdt-0.6b-v3" detail="612 MB / 1,2 GB" />
+      </div>
+      <div style={{ background: "var(--bg-surface)", borderRadius: "var(--radius-lg)", boxShadow: "var(--shadow-card)" }}>
+        <EmptyState
+          title="Nada ainda. Grave uma reunião ou solte um arquivo de áudio aqui."
+          action={<Button variant="primary" icon="circle">Gravar</Button>}
+          style={{ padding: "var(--space-6)" }}
+        />
+      </div>
+    </div>
+  );
+}
+const __root = ReactDOM.createRoot(document.getElementById("root"));
+__root.render(typeof Toast === "function" ? <Demo /> : (
+  <pre style={{ font: "var(--type-mono)", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
+    _ds_bundle.js ainda não foi gerado. Os componentes aparecem aqui depois que o design system é compilado.
+  </pre>
+));
+</script>
+</body>
+</html>

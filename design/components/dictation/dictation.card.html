@@ -1,0 +1,56 @@
+<!-- @dsCard group="Components" viewport="700x200" name="Dictation — floating HUD" subtitle="Vibrant, non-activating pill; one or two words of copy per state" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  body { padding: 16px 20px; background: var(--bg-window); }
+  .grp { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+  .col { display: flex; flex-direction: column; gap: var(--space-4); }
+  .lbl { font: var(--type-mono-xs); color: var(--text-faint); letter-spacing: var(--tracking-mono); }
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+function pick(names) {
+  for (const k of Object.getOwnPropertyNames(window)) {
+    try {
+      const v = window[k];
+      if (v && typeof v === "object" && !(v instanceof Window) && names.every(n => typeof v[n] === "function")) return v;
+    } catch (e) { /* cross-origin or throwing getter */ }
+  }
+  return {};
+}
+const { DictationPill } = pick(["DictationPill","Waveform"]);
+
+function Demo() {
+  return (
+    <div className="col" style={{ gap: "var(--space-4)" }}>
+      <div className="grp">
+        <DictationPill state="idle" />
+        <DictationPill state="listening" target="Slack · casual" />
+      </div>
+      <div className="grp">
+        <DictationPill state="cleaning" />
+        <DictationPill state="inserted" target="Cursor · literal" />
+        <DictationPill state="blocked" />
+      </div>
+      <div className="lbl">--hud-tint + --blur-hud · --shadow-hud · ouvi-fade-up 220ms</div>
+    </div>
+  );
+}
+const __root = ReactDOM.createRoot(document.getElementById("root"));
+__root.render(typeof DictationPill === "function" ? <Demo /> : (
+  <pre style={{ font: "var(--type-mono)", color: "var(--text-muted)", whiteSpace: "pre-wrap" }}>
+    _ds_bundle.js ainda não foi gerado. Os componentes aparecem aqui depois que o design system é compilado.
+  </pre>
+));
+</script>
+</body>
+</html>
